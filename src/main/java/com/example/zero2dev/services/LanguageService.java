@@ -17,31 +17,24 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LanguageService implements ILanguageService {
     private final LanguageRepository languageRepository;
-    private final LanguageMapper languageMapper;
+    private final LanguageMapper mapper;
     @Override
     @Transactional
     public LanguageResponse createLanguage(LanguageDTO languageDTO) {
-        boolean existingLanguage = this.existByVersion(languageDTO.getVersion());
-        if (existingLanguage){
-            throw new DuplicateVersionException("A version has been existed!");
-        }
-        Language language = this.languageRepository.save(
-                LanguageDTO.exchangeEntity(languageDTO)
-        );
-        return LanguageResponse.exchangeEntity(language);
+        this.checkExistVersion(languageDTO);
+        Language language = this.languageRepository.save(mapper.toEntity(languageDTO));
+        return mapper.toResponse(language);
     }
 
     @Override
     public LanguageResponse getLanguageById(Long id) {
-        Language language = this.findLanguageById(id);
-        return LanguageResponse.exchangeEntity(language);
+        return mapper.toResponse(this.findLanguageById(id));
     }
 
     @Override
     public List<LanguageResponse> getAllLanguage() {
-        List<Language> languages = this.languageRepository.findAll();
-        return languages.stream()
-                .map(LanguageResponse::exchangeEntity)
+        return this.languageRepository.findAll().stream()
+                .map(mapper::toResponse)
                 .toList();
     }
 
@@ -49,18 +42,15 @@ public class LanguageService implements ILanguageService {
     public LanguageResponse deleteById(Long id) {
         Language language = this.findLanguageById(id);
         language.setIsActive(false);
-        return LanguageResponse.exchangeEntity(this.languageRepository.save(language));
+        return mapper.toResponse(this.languageRepository.save(language));
     }
 
     @Override
     public LanguageResponse updateLanguage(Long id, LanguageDTO languageDTO) {
         Language language = this.findLanguageById(id);
-        languageMapper.updateLanguageFromDTO(languageDTO, language);
-        if (this.existByVersion(language.getVersion())){
-            throw new DuplicateVersionException("A version has been existed");
-        }
-        Language updatedLanguage = this.languageRepository.save(language);
-        return LanguageResponse.exchangeEntity(updatedLanguage);
+        mapper.updateLanguageFromDTO(languageDTO, language);
+        this.checkExistVersion(languageDTO);
+        return mapper.toResponse(this.languageRepository.save(language));
     }
     public Language findLanguageById(Long id){
         return this.languageRepository.findById(id)
@@ -76,5 +66,10 @@ public class LanguageService implements ILanguageService {
     public boolean existByVersion(String version){
         Language language = this.languageRepository.findByVersion(version);
         return language != null;
+    }
+    public void checkExistVersion(LanguageDTO languageDTO){
+        if (this.existByVersion(languageDTO.getVersion())){
+            throw new DuplicateVersionException("A version has been existed!");
+        }
     }
 }

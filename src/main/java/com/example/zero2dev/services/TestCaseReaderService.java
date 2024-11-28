@@ -31,20 +31,12 @@ public class TestCaseReaderService implements ITestCaseReaderService {
         TestCaseReader testCaseReader = mapper.toEntity(testCaseReaderDTO);
         testCaseReader.setIsActive(true);
         testCaseReader.setProblem(problem);
-        TestCaseReader insertData = this.testCaseReaderRepository.save(testCaseReader);
-        return TestCaseReaderResponse.exchangeEntity(insertData);
+        return TestCaseReaderResponse.exchangeEntity(this.testCaseReaderRepository.save(testCaseReader));
     }
 
     @Override
     public TestCaseReaderResponse updateTestCase(Long id, TestCaseReaderDTO testCaseReaderDTO) {
-        if (testCaseReaderDTO==null){
-            throw new ResourceNotFoundException("Can not update right now");
-        }
-        TestCaseReader testCaseReader = this.findTestCaseReaderById(id);
-        if(!testCaseReader.getProblem().getId().equals(testCaseReaderDTO.getProblemId())) {
-            Problem problem = this.problemService.findProblemById(testCaseReaderDTO.getProblemId());
-            testCaseReader.setProblem(problem);
-        }
+        TestCaseReader testCaseReader = this.newTestCaseReader(id, testCaseReaderDTO);
         String newInputPath = (testCaseReaderDTO.getInputPath()!=null) ? testCaseReaderDTO.getInputPath() : testCaseReader.getInputPath();
         String newOutputPath = (testCaseReaderDTO.getOutputPath()!=null) ? testCaseReaderDTO.getOutputPath() : testCaseReader.getOutputPath();
         boolean newIsActive = (testCaseReaderDTO.isActive()!=testCaseReader.getIsActive())
@@ -81,5 +73,16 @@ public class TestCaseReaderService implements ITestCaseReaderService {
     public TestCaseReader findTestCaseReaderById(Long id){
         return this.testCaseReaderRepository
                 .findById(id).orElseThrow(()->new ResourceNotFoundException("Can not find match test case"));
+    }
+    public TestCaseReader newTestCaseReader(Long id, TestCaseReaderDTO testCaseReaderDTO){
+        if (testCaseReaderDTO==null){
+            throw new ResourceNotFoundException("Can not update right now");
+        }
+        TestCaseReader testCaseReader = this.findTestCaseReaderById(id);
+        if(!testCaseReader.getProblem().getId().equals(testCaseReaderDTO.getProblemId())) {
+            Problem problem = this.problemService.findProblemById(testCaseReaderDTO.getProblemId());
+            testCaseReader.setProblem(problem);
+        }
+        return testCaseReader;
     }
 }

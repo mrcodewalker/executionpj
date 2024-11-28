@@ -27,13 +27,12 @@ public class Submission {
     @ManyToOne
     @JoinColumn(name = "problem_id", nullable = false)
     private Problem problem;
-
+    @ManyToOne
+    @JoinColumn(name = "contest_id", nullable = false)
+    private Contest contest;
     @ManyToOne
     @JoinColumn(name = "language_id", nullable = false)
     private Language language;
-
-    @Column(nullable = false, columnDefinition = "TEXT")
-    private String code;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

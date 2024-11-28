@@ -34,7 +34,7 @@ public class ProblemService implements IProblemService {
         Problem problem = ProblemDTO.createFromEntity(category, problemDTO);
 
         Problem savedProblem = problemRepository.save(problem);
-        return ProblemDTO.exchangeEntity(savedProblem);
+        return problemMapper.toResponse(savedProblem);
     }
 
     @Override
@@ -45,7 +45,7 @@ public class ProblemService implements IProblemService {
         problemMapper.updateProblemFromDto(problemDTO, problem);
 
         Problem updatedProblem = problemRepository.save(problem);
-        return ProblemDTO.exchangeEntity(updatedProblem);
+        return problemMapper.toResponse(updatedProblem);
     }
 
     @Override
@@ -58,7 +58,7 @@ public class ProblemService implements IProblemService {
     @Override
     public ProblemResponse getProblemById(Long id) {
         Problem problem = this.findProblemById(id);
-        return ProblemDTO.exchangeEntity(problem);
+        return problemMapper.toResponse(problem);
     }
 
     @Override
@@ -67,7 +67,7 @@ public class ProblemService implements IProblemService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
         Page<Problem> problemPage = problemRepository.searchProblems(title, difficult,
                 categoryId, pageable);
-        return problemPage.map(ProblemDTO::exchangeEntity);
+        return problemPage.map(problemMapper::toResponse);
     }
 
     @Override

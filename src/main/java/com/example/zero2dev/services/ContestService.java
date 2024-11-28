@@ -22,21 +22,14 @@ public class ContestService implements IContestService {
     private final ContestMapper mapper;
     @Override
     public ContestResponse createContest(ContestDTO contestDTO) {
-        if (contestDTO.getEndTime().isBefore(LocalDateTime.now())){
-            throw new TimeNotValidException("Time was not found, please try again!");
-        }
-        if (contestDTO.getEndTime().isBefore(contestDTO.getStartTime())){
-            throw new TimeNotValidException("End time must be greater than start time!");
-        }
+        this.validTime(contestDTO);
         Contest contest = mapper.toEntity(contestDTO);
         return mapper.toResponse(this.contestRepository.save(contest));
     }
-
     @Override
     public ContestResponse updateContest(Long id, ContestDTO contestDTO) {
         Contest clone = this.findContestById(id);
-        Contest contest = mapper.toEntity(contestDTO);
-        contest.setId(clone.getId());
+        Contest contest = mapper.parseEntity(clone, contestDTO);
         return mapper.toResponse(this.contestRepository.save(contest));
     }
 
@@ -63,5 +56,13 @@ public class ContestService implements IContestService {
     public Contest findContestById(Long id){
         return this.contestRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Can not find match contest with id: "+id));
+    }
+    public void validTime(ContestDTO contestDTO){
+        if (contestDTO.getEndTime().isBefore(LocalDateTime.now())){
+            throw new TimeNotValidException("Time was not found, please try again!");
+        }
+        if (contestDTO.getEndTime().isBefore(contestDTO.getStartTime())){
+            throw new TimeNotValidException("End time must be greater than start time!");
+        }
     }
 }

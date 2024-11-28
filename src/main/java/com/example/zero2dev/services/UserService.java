@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -99,35 +100,32 @@ public class UserService implements IUserService {
 
     @Override
     public List<UserResponse> getUserByMatchEmail(String email) {
-        List<User> users = this.userRepository.findMatchEmail(email);
-        if (users.isEmpty()) {
-            throw new ResourceNotFoundException("Can not find match email");
-        }
-        return users.stream()
-                .map(mapper::toResponse)
-                .collect(Collectors.toList());
+        return Optional.ofNullable(this.userRepository.findMatchEmail(email))
+                .filter(users -> !users.isEmpty())
+                .map(users -> users.stream()
+                        .map(mapper::toResponse)
+                        .collect(Collectors.toList()))
+                .orElseThrow(() -> new ResourceNotFoundException("Can not find match email"));
     }
 
     @Override
     public List<UserResponse> getUserByMatchPhoneNumber(String phoneNumber) {
-        List<User> users = this.userRepository.findMatchPhoneNumber(phoneNumber);
-        if (users.isEmpty()) {
-            throw new ResourceNotFoundException("Can not find match phone number");
-        }
-        return users.stream()
-                .map(mapper::toResponse)
-                .collect(Collectors.toList());
+        return Optional.ofNullable(this.userRepository.findMatchPhoneNumber(phoneNumber))
+                .filter(phone -> !phone.isEmpty())
+                .map(phone -> phone.stream()
+                        .map(mapper::toResponse)
+                        .collect(Collectors.toList()))
+                .orElseThrow(() -> new ResourceNotFoundException("Can not find match phoneNumber"));
     }
 
     @Override
     public List<UserResponse> getUserByMatchUserName(String username) {
-        List<User> users = this.userRepository.findMatchUsername(username);
-        if (users.isEmpty()) {
-            throw new ResourceNotFoundException("Can not find match user name");
-        }
-        return users.stream()
-                .map(mapper::toResponse)
-                .collect(Collectors.toList());
+        return Optional.ofNullable(this.userRepository.findMatchUsername(username))
+                .filter(users -> !users.isEmpty())
+                .map(users -> users.stream()
+                        .map(mapper::toResponse)
+                        .collect(Collectors.toList()))
+                .orElseThrow(() -> new ResourceNotFoundException("Can not find match username"));
     }
 
     private User collectUser(Long id){

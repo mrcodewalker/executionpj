@@ -29,8 +29,13 @@ public class ContestParticipantService implements IContestParticipantService {
 
     @Override
     public ContestParticipantResponse joinContest(ContestParticipantDTO contestParticipantDTO) {
-        return exchangeResponse(this.contestParticipantRepository.save(
-                this.checkValid(contestParticipantDTO)));
+        return Optional.of(contestParticipantDTO)
+                .map(this::validateContestParticipation)
+                .map(this::exchangeKey)
+                .map(this::validateKey)
+                .map(this.contestParticipantRepository::save)
+                .map(this::exchangeResponse)
+                .orElseThrow(() -> new ValueNotValidException("Cannot process contest participation"));
     }
 
     @Override
@@ -125,5 +130,11 @@ public class ContestParticipantService implements IContestParticipantService {
         if (problem.getPoints()<0){
             throw new ValueNotValidException("Can not submit right now");
         }
+    }
+    private ContestParticipantDTO validateContestParticipation(ContestParticipantDTO dto) {
+        if (isUserJoinedContest(dto.getContestId(), dto.getUserId())) {
+            throw new ValueNotValidException("Cannot join contest right now");
+        }
+        return dto;
     }
 }

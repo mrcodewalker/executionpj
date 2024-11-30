@@ -1,5 +1,6 @@
 package com.example.zero2dev.models;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -48,11 +49,14 @@ public class User {
     private Boolean isActive = true;
 
     @OneToMany(mappedBy = "user")
+    @JsonManagedReference
     private List<Submission> submissions;
 
     @OneToMany(mappedBy = "user")
+    @JsonManagedReference
     private List<ContestParticipant> contestParticipants;
 
     @OneToMany(mappedBy = "user")
+    @JsonManagedReference
     private List<ContestRanking> contestRankings;
 }

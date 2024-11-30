@@ -1,5 +1,6 @@
 package com.example.zero2dev.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -21,6 +22,7 @@ public class ContestRanking {
 
     @ManyToOne
     @JoinColumn(name = "contest_id", nullable = false)
+    @JsonBackReference
     private Contest contest;
 
     @ManyToOne

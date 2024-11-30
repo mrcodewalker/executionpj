@@ -1,5 +1,7 @@
 package com.example.zero2dev.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,7 +15,6 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
 public class Contest {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,8 +33,10 @@ public class Contest {
     private String type;
 
     @OneToMany(mappedBy = "contest")
+    @JsonIgnore
     private List<ContestParticipant> participants;
 
     @OneToMany(mappedBy = "contest")
+    @JsonManagedReference
     private List<ContestRanking> rankings;
 }

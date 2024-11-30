@@ -1,6 +1,7 @@
 package com.example.zero2dev.models;
 
 import com.example.zero2dev.storage.SubmissionStatus;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -22,6 +23,7 @@ public class Submission {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonBackReference
     private User user;
 
     @ManyToOne
@@ -29,6 +31,7 @@ public class Submission {
     private Problem problem;
     @ManyToOne
     @JoinColumn(name = "contest_id", nullable = false)
+    @JsonBackReference
     private Contest contest;
     @ManyToOne
     @JoinColumn(name = "language_id", nullable = false)

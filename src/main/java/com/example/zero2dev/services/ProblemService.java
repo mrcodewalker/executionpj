@@ -34,7 +34,9 @@ public class ProblemService implements IProblemService {
         Problem problem = ProblemDTO.createFromEntity(category, problemDTO);
 
         Problem savedProblem = problemRepository.save(problem);
-        return problemMapper.toResponse(savedProblem);
+        ProblemResponse response = problemMapper.toResponse(savedProblem);
+        response.setCategoryId(savedProblem.getCategory().getId());
+        return response;
     }
 
     @Override

@@ -8,6 +8,7 @@ import com.example.zero2dev.mapper.ContestMapper;
 import com.example.zero2dev.models.Contest;
 import com.example.zero2dev.repositories.ContestRepository;
 import com.example.zero2dev.responses.ContestResponse;
+import com.example.zero2dev.storage.MESSAGE;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -42,7 +43,7 @@ public class ContestService implements IContestService {
 
     @Override
     public List<ContestResponse> listContestValid() {
-        List<Contest> contests = this.contestRepository.findAllNotExpired(LocalDateTime.now());
+        List<Contest> contests = this.contestRepository.findValidContests(LocalDateTime.now());
         return contests.stream()
                 .map(mapper::toResponse)
                 .collect(Collectors.toList());
@@ -54,15 +55,15 @@ public class ContestService implements IContestService {
         return mapper.toResponse(contest);
     }
     public Contest findContestById(Long id){
-        return this.contestRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Can not find match contest with id: "+id));
+        return this.contestRepository.findValidContestById(id, LocalDateTime.now())
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.CONTEST_EXPIRED_TIME));
     }
     public void validTime(ContestDTO contestDTO){
         if (contestDTO.getEndTime().isBefore(LocalDateTime.now())){
-            throw new TimeNotValidException("Time was not found, please try again!");
+            throw new TimeNotValidException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
         }
         if (contestDTO.getEndTime().isBefore(contestDTO.getStartTime())){
-            throw new TimeNotValidException("End time must be greater than start time!");
+            throw new TimeNotValidException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
         }
     }
 }

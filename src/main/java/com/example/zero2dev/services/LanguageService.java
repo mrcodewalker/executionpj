@@ -8,6 +8,8 @@ import com.example.zero2dev.mapper.LanguageMapper;
 import com.example.zero2dev.models.Language;
 import com.example.zero2dev.repositories.LanguageRepository;
 import com.example.zero2dev.responses.LanguageResponse;
+import com.example.zero2dev.storage.CompilerVersion;
+import com.example.zero2dev.storage.MESSAGE;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,8 +24,13 @@ public class LanguageService implements ILanguageService {
     @Transactional
     public LanguageResponse createLanguage(LanguageDTO languageDTO) {
         this.checkExistVersion(languageDTO);
-        Language language = this.languageRepository.save(mapper.toEntity(languageDTO));
-        return mapper.toResponse(language);
+        CompilerVersion compilerVersion = CompilerVersion.valueOf(languageDTO.getVersion());
+        Language language = mapper.toEntity(languageDTO);
+        language.setIsActive(true);
+        this.languageRepository.save(language);
+        LanguageResponse response = mapper.toResponse(language);
+        response.setCompilerVersion(compilerVersion);
+        return response;
     }
 
     @Override
@@ -54,12 +61,12 @@ public class LanguageService implements ILanguageService {
     }
     public Language findLanguageById(Long id){
         return this.languageRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Can not find language"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
     public Language findLanguageByVersion(String version){
         Language language = this.languageRepository.findByVersion(version);
         if (language==null){
-            throw new DuplicateVersionException("A version has been existed");
+            throw new DuplicateVersionException(MESSAGE.EXISTED_RECORD_ERROR);
         }
         return language;
     }
@@ -69,7 +76,7 @@ public class LanguageService implements ILanguageService {
     }
     public void checkExistVersion(LanguageDTO languageDTO){
         if (this.existByVersion(languageDTO.getVersion())){
-            throw new DuplicateVersionException("A version has been existed!");
+            throw new DuplicateVersionException(MESSAGE.EXISTED_RECORD_ERROR);
         }
     }
 }

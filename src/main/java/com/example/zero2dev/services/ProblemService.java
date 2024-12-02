@@ -8,8 +8,11 @@ import com.example.zero2dev.models.Category;
 import com.example.zero2dev.models.Problem;
 import com.example.zero2dev.repositories.CategoryRepository;
 import com.example.zero2dev.repositories.ProblemRepository;
+import com.example.zero2dev.repositories.SubmissionRepository;
 import com.example.zero2dev.responses.ProblemResponse;
 import com.example.zero2dev.storage.Difficulty;
+import com.example.zero2dev.storage.MESSAGE;
+import com.example.zero2dev.storage.SubmissionStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -27,6 +30,7 @@ public class ProblemService implements IProblemService {
     private final ProblemRepository problemRepository;
     private final CategoryRepository categoryRepository;
     private final ProblemMapper problemMapper;
+    private final SubmissionRepository submissionRepository;
 
     @Override
     public ProblemResponse createProblem(ProblemDTO problemDTO) {
@@ -79,20 +83,25 @@ public class ProblemService implements IProblemService {
         problem.setTotalSubmission(problem.getTotalSubmission() + 1);
         problemRepository.save(problem);
     }
+    public void increaseValue(Problem problem) {
+        problem.setTotalSubmission(problem.getTotalSubmission() + 1);
+        problemRepository.save(problem);
+    }
 
     @Override
     @Transactional
-    public void incrementAcceptedSubmissionCount(Long problemId) {
+    public void incrementAcceptedSubmissionCount(Long problemId, SubmissionStatus status) {
         Problem problem = this.findProblemById(problemId);
-        problem.setAcceptedSubmission(problem.getAcceptedSubmission() + 1);
+        Long totalAccepted = this.submissionRepository.countByProblemIdAndStatus(problemId, status);
+        problem.setAcceptedSubmission(totalAccepted);
         problemRepository.save(problem);
     }
     public Problem findProblemById(Long id){
         return problemRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Problem not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
     public Category findCategoryById(Long id){
         return categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
 }

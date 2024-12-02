@@ -7,6 +7,7 @@ import com.example.zero2dev.mapper.CategoryMapper;
 import com.example.zero2dev.models.Category;
 import com.example.zero2dev.repositories.CategoryRepository;
 import com.example.zero2dev.responses.CategoryResponse;
+import com.example.zero2dev.storage.MESSAGE;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +30,8 @@ public class CategoryService implements ICategoryService {
 
     @Override
     public void deleteCategory(Long id) {
-        this.categoryRepository.deleteById(id);
+        Category category = this.findCategoryById(id);
+        this.categoryRepository.delete(category);
     }
 
     @Override
@@ -38,6 +40,6 @@ public class CategoryService implements ICategoryService {
     }
     public Category findCategoryById(Long id){
         return this.categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
 }

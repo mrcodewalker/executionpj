@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 public class CodeStorageResponse {
     private Long id;
-    private Long submissionId;
+    private Long problemId;
     private Long userId;
     private String sourceCode;
     private LocalDateTime createdAt;
@@ -22,7 +22,7 @@ public class CodeStorageResponse {
         return CodeStorageResponse.builder()
                 .sourceCode(codeStorageDTO.getSourceCode())
                 .userId(codeStorageDTO.getUserId())
-                .submissionId(codeStorageDTO.getSubmissionId())
+                .problemId(codeStorageDTO.getProblemId())
                 .build();
     }
     public static CodeStorageResponse fromData(CodeStorage codeStorage){
@@ -30,7 +30,7 @@ public class CodeStorageResponse {
                 .id(codeStorage.getId())
                 .sourceCode(codeStorage.getSourceCode())
                 .userId(codeStorage.getUser().getId())
-                .submissionId(codeStorage.getSubmission().getId())
+                .problemId(codeStorage.getProblem().getId())
                 .createdAt(codeStorage.getCreatedAt())
                 .updatedAt(codeStorage.getUpdatedAt())
                 .build();

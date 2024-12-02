@@ -6,12 +6,16 @@ import com.example.zero2dev.exceptions.ResourceNotFoundException;
 import com.example.zero2dev.interfaces.ICodeStorageService;
 import com.example.zero2dev.mapper.CodeStorageMapper;
 import com.example.zero2dev.models.CodeStorage;
+import com.example.zero2dev.models.Problem;
 import com.example.zero2dev.models.Submission;
 import com.example.zero2dev.models.User;
 import com.example.zero2dev.repositories.CodeStorageRepository;
+import com.example.zero2dev.repositories.ProblemRepository;
 import com.example.zero2dev.repositories.SubmissionRepository;
 import com.example.zero2dev.repositories.UserRepository;
 import com.example.zero2dev.responses.CodeStorageResponse;
+import com.example.zero2dev.storage.MESSAGE;
+import com.example.zero2dev.storage.SubmissionStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -31,10 +35,11 @@ public class CodeStorageService implements ICodeStorageService {
     private final CodeStorageRepository codeStorageRepository;
     private final UserRepository userRepository;
     private final SubmissionRepository submissionRepository;
+    private final ProblemRepository problemRepository;
     @Override
     @Transactional
     public CodeStorageResponse createCodeStorage(CodeStorageDTO codeStorageDTO) {
-        return this.existsByUserAndSubmission(codeStorageDTO)
+        return this.existsByUserAndProblem(codeStorageDTO)
                 ? this.updateCodeStorage(codeStorageDTO)
                 : CodeStorageResponse.fromData(codeStorageRepository.save(this.exchangeEntity(codeStorageDTO)));
     }
@@ -48,9 +53,9 @@ public class CodeStorageService implements ICodeStorageService {
     @Override
     public List<CodeStorageResponse> getCodeStorageBySize(int size, CodeStorageDTO codeStorageDTO) {
         Pageable limit = PageRequest.of(0, size);
-        List<CodeStorage> codeStorages = codeStorageRepository.findByUserAndSubmissionWithLimit(
+        List<CodeStorage> codeStorages = codeStorageRepository.findByUserAndProblemWithLimit(
                 codeStorageDTO.getUserId(),
-                codeStorageDTO.getSubmissionId(),
+                codeStorageDTO.getProblemId(),
                 limit
         );
         return Optional.ofNullable(codeStorages)
@@ -58,7 +63,7 @@ public class CodeStorageService implements ICodeStorageService {
                 .map(items -> items.stream()
                         .map(CodeStorageResponse::fromData)
                         .collect(Collectors.toList()))
-                .orElseThrow(() -> new ResourceNotFoundException("Can not filter list"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.ARRAY_SIZE_ERROR));
     }
 
     @Override
@@ -68,7 +73,7 @@ public class CodeStorageService implements ICodeStorageService {
                 .map(items -> items.stream()
                         .map(CodeStorageResponse::fromData)
                         .collect(Collectors.toList()))
-                .orElseThrow(() -> new ResourceNotFoundException("Can not find user"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.ARRAY_SIZE_ERROR));
     }
 
     @Override
@@ -81,28 +86,35 @@ public class CodeStorageService implements ICodeStorageService {
         return CodeStorageResponse.fromData(this.findExistRecord(codeStorageDTO));
     }
 
-    public Pair<User, Submission> validateData(CodeStorageDTO codeStorageDTO){
+    @Override
+    public CodeStorageResponse findCodeStorageAccepted(Long userId, Long problemId, SubmissionStatus status) {
+        return CodeStorageResponse.fromData(
+                this.codeStorageRepository.findByUserAndProblem(userId, problemId)
+                        .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION)));
+    }
+
+    public Pair<User, Problem> validateData(CodeStorageDTO codeStorageDTO){
         User user = this.userRepository.findById(codeStorageDTO.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Can not find user"));
-        Submission submission = this.submissionRepository.findById(codeStorageDTO.getSubmissionId())
-                .orElseThrow(() -> new ResourceNotFoundException("Can not find submission"));
-        return Pair.of(user, submission);
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
+        Problem problem = this.problemRepository.findById(codeStorageDTO.getProblemId())
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
+        return Pair.of(user, problem);
     }
     public CodeStorage findExistRecord(CodeStorageDTO codeStorageDTO){
-        return this.codeStorageRepository.findByUserAndSubmission(
-                codeStorageDTO.getUserId(), codeStorageDTO.getSubmissionId())
-                .orElseThrow(() -> new ResourceNotFoundException("Can not find exist record"));
+        return this.codeStorageRepository.findByUserAndProblem(
+                codeStorageDTO.getUserId(), codeStorageDTO.getProblemId())
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
-    public boolean existsByUserAndSubmission(CodeStorageDTO codeStorageDTO){
-        return this.codeStorageRepository.findByUserAndSubmission(
-                codeStorageDTO.getUserId(), codeStorageDTO.getSubmissionId()).isPresent();
+    public boolean existsByUserAndProblem(CodeStorageDTO codeStorageDTO){
+        return this.codeStorageRepository.findByUserAndProblem(
+                codeStorageDTO.getUserId(), codeStorageDTO.getProblemId()).isPresent();
     }
     public CodeStorage exchangeEntity(CodeStorageDTO codeStorageDTO){
-        Pair<User, Submission> data = this.validateData(codeStorageDTO);
+        Pair<User, Problem> data = this.validateData(codeStorageDTO);
         return CodeStorage.builder()
                 .sourceCode(codeStorageDTO.getSourceCode())
                 .user(data.getFirst())
-                .submission(data.getSecond())
+                .problem(data.getSecond())
                 .build();
     }
 }

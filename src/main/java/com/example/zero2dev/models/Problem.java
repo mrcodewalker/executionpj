@@ -1,6 +1,7 @@
 package com.example.zero2dev.models;
 
 import com.example.zero2dev.storage.Difficulty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -49,8 +50,10 @@ public class Problem {
     private Boolean isActive = true;
 
     @OneToMany(mappedBy = "problem")
+    @JsonIgnore
     private List<TestCaseReader> testCases;
 
     @OneToMany(mappedBy = "problem")
+    @JsonIgnore
     private List<Submission> submissions;
 }

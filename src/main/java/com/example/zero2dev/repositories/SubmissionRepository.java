@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface SubmissionRepository extends JpaRepository<Submission, Long> {
@@ -24,4 +25,9 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     @Query("SELECT s FROM Submission s WHERE s.executionTime = (" +
             "SELECT MIN(s2.executionTime) FROM Submission s2)")
     List<Submission> findSubmissionsWithLowestExecutionTime();
+    Optional<Submission> findFirstByUser_IdAndProblem_IdOrderByCreatedAtDesc(Long userId, Long problemId);
+    @Query("SELECT COUNT(s) FROM Submission s WHERE s.user.id = :userId AND s.status = :status")
+    Long countByUserIdAndStatus(@Param("userId") Long userId, @Param("status") SubmissionStatus status);
+    @Query("SELECT COUNT(s) FROM Submission s WHERE s.problem.id = :problemId AND s.status = :status")
+    Long countByProblemIdAndStatus(@Param("problemId") Long problemId, @Param("status") SubmissionStatus status);
 }

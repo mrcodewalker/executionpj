@@ -12,6 +12,7 @@ import com.example.zero2dev.repositories.ContestRankingRepository;
 import com.example.zero2dev.repositories.ContestRepository;
 import com.example.zero2dev.repositories.UserRepository;
 import com.example.zero2dev.responses.ContestRankingResponse;
+import com.example.zero2dev.storage.MESSAGE;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -33,13 +34,11 @@ public class ContestRankingService implements IContestRankingService {
         return ContestRankingResponse.exchangeEntity(
                 this.contestRankingRepository.save(this.toEntity(contestRankingDTO)));
     }
-
     @Override
     public ContestRankingResponse updateContestRanking(Long id, ContestRankingDTO contestRankingDTO) {
         return ContestRankingResponse.exchangeEntity(this.contestRankingRepository.save(
                 this.anotherMapper(id, contestRankingDTO)));
     }
-
     @Override
     public List<ContestRankingResponse> getUserRanking(Long userId) {
         return Optional.ofNullable(this.contestRankingRepository.findByUser_Id(userId))
@@ -47,9 +46,8 @@ public class ContestRankingService implements IContestRankingService {
                 .map(items -> items.stream()
                         .map(ContestRankingResponse::exchangeEntity)
                         .collect(Collectors.toList()))
-                .orElseThrow(() -> new ResourceNotFoundException("Can not get list by user ranking right now"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.ARRAY_SIZE_ERROR));
     }
-
     @Override
     public List<ContestRankingResponse> getListRankingByContestId(Long contestId) {
         return Optional.ofNullable(this.contestRankingRepository.findByContest_Id(contestId))
@@ -57,14 +55,13 @@ public class ContestRankingService implements IContestRankingService {
                 .map(items -> items.stream()
                         .map(ContestRankingResponse::exchangeEntity)
                         .collect(Collectors.toList()))
-                .orElseThrow(() -> new ResourceNotFoundException("Can not get list by contest id right now"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.ARRAY_SIZE_ERROR));
     }
-
     @Override
     public ContestRankingResponse getRankingUserContest(Long userId, Long contestId) {
         return Optional.ofNullable(this.contestRankingRepository.findByUserIdAndContestId(userId, contestId))
                 .map(ContestRankingResponse::exchangeEntity)
-                .orElseThrow(() -> new ResourceNotFoundException("Can not fill data right now"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.GENERAL_ERROR));
     }
 
     @Override
@@ -77,7 +74,7 @@ public class ContestRankingService implements IContestRankingService {
     @Override
     public ContestRankingResponse getById(Long id) {
         return ContestRankingResponse.exchangeEntity(this.contestRankingRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Can not find contest ranking right now")));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION)));
     }
 
     @Override
@@ -93,15 +90,15 @@ public class ContestRankingService implements IContestRankingService {
     }
     public ContestRanking getByContestRankingId(Long id){
         return this.contestRankingRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Can not find contest ranking right now"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
     public User getUser(Long id){
         return this.userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Can not find user"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
     public Contest getContest(Long id){
         return this.contestRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Can not find contest"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
     public ContestRanking toEntity(ContestRankingDTO contestRankingDTO){
         User user = this.getUser(contestRankingDTO.getUserId());
@@ -115,7 +112,7 @@ public class ContestRankingService implements IContestRankingService {
     }
     public ContestRanking findExistRecord(Long id){
         return this.contestRankingRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Can not find contest ranking with id"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
     public ContestRanking anotherMapper(Long id, ContestRankingDTO contestRankingDTO){
         ContestRanking existContestRanking = this.findExistRecord(id);

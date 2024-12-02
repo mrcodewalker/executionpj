@@ -7,10 +7,12 @@ import org.mapstruct.*;
 
 @Mapper(componentModel = "spring")
 public interface SubmissionMapper {
-    SubmissionResponse toResponse(Submission submission);
+//    SubmissionResponse toResponse(Submission submission);
     @Mapping(target = "status", ignore = true)
+    @Mapping(target = "executionTime", ignore = true)
+    @Mapping(target = "memoryUsed", ignore = true)
     Submission toEntity(SubmissionDTO submissionDTO);
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    Submission parseEntity(@MappingTarget Submission submission,
-                           SubmissionDTO submissionDTO);
+//    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+//    Submission parseEntity(@MappingTarget Submission submission,
+//                           SubmissionDTO submissionDTO);
 }

@@ -6,6 +6,7 @@ import com.example.zero2dev.models.CodeStorage;
 import com.example.zero2dev.models.Submission;
 import com.example.zero2dev.models.User;
 import com.example.zero2dev.responses.CodeStorageResponse;
+import com.example.zero2dev.storage.SubmissionStatus;
 import org.springframework.data.util.Pair;
 
 import java.util.List;
@@ -17,4 +18,5 @@ public interface ICodeStorageService {
     List<CodeStorageResponse> getCodeStorageByUser(Long userId);
     void deleteCodeStorageById(Long id);
     CodeStorageResponse getByInfo(CodeStorageDTO codeStorageDTO);
+    CodeStorageResponse findCodeStorageAccepted(Long userId, Long problemId, SubmissionStatus status);
 }

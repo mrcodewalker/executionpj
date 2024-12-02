@@ -17,4 +17,5 @@ public class CompileCodeDTO {
     private List<TestCase> testCases;
     private Language language;
     private CompilerVersion compilerVersion;
+    private Long timeLimit;
 }

@@ -1,5 +1,6 @@
 package com.example.zero2dev.dtos;
 
+import com.example.zero2dev.storage.CompilerVersion;
 import com.example.zero2dev.storage.SubmissionStatus;
 import lombok.*;
 
@@ -12,10 +13,7 @@ import lombok.*;
 public class SubmissionDTO {
     private Long userId;
     private Long problemId;
-    private Long languageId;
     private Long contestId;
-    private String status;
-    private Long executionTime;
-    private Long memoryUsed;
     private String sourceCode;
+    private String compilerVersion;
 }

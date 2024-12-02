@@ -10,4 +10,5 @@ import org.springframework.stereotype.Repository;
 public interface LanguageRepository extends JpaRepository<Language, Long> {
     @Query("SELECT l FROM Language l WHERE l.version = :version")
     Language findByVersion(@Param("version") String version);
+    Language findByName(String name);
 }

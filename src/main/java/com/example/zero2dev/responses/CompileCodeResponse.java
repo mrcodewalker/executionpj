@@ -22,4 +22,6 @@ public class CompileCodeResponse {
     public long executionTime;
     @JsonProperty("timeLimit")
     public boolean timeLimit;
+    @JsonProperty("memoryUsed")
+    public Long memoryUsed;
 }

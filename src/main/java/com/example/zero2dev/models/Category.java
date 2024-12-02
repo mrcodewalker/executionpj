@@ -1,5 +1,6 @@
 package com.example.zero2dev.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -28,5 +29,6 @@ public class Category {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "category")
+    @JsonIgnore
     private List<Problem> problems;
 }

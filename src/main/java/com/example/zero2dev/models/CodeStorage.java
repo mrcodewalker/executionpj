@@ -23,8 +23,8 @@ public class CodeStorage {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "submission_id")
-    private Submission submission;
+    @JoinColumn(name = "problem_id")
+    private Problem problem;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;

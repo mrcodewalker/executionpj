@@ -3,6 +3,7 @@ package com.example.zero2dev.interfaces;
 import com.example.zero2dev.dtos.ProblemDTO;
 import com.example.zero2dev.responses.ProblemResponse;
 import com.example.zero2dev.storage.Difficulty;
+import com.example.zero2dev.storage.SubmissionStatus;
 import org.springframework.data.domain.Page;
 
 public interface IProblemService {
@@ -13,5 +14,5 @@ public interface IProblemService {
     Page<ProblemResponse> searchProblems(String title, Difficulty difficult,
                                     Long categoryId, int page, int size);
     void incrementSubmissionCount(Long problemId);
-    void incrementAcceptedSubmissionCount(Long problemId);
+    void incrementAcceptedSubmissionCount(Long problemId, SubmissionStatus status);
 }

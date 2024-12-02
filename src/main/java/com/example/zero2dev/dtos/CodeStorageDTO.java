@@ -10,6 +10,6 @@ import lombok.*;
 @Data
 public class CodeStorageDTO {
     private String sourceCode;
-    private Long submissionId;
+    private Long problemId;
     private Long userId;
 }

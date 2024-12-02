@@ -11,6 +11,7 @@ import com.example.zero2dev.repositories.ContestRepository;
 import com.example.zero2dev.repositories.ProblemRepository;
 import com.example.zero2dev.repositories.UserRepository;
 import com.example.zero2dev.responses.ContestParticipantResponse;
+import com.example.zero2dev.storage.MESSAGE;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -35,9 +36,8 @@ public class ContestParticipantService implements IContestParticipantService {
                 .map(this::validateKey)
                 .map(this.contestParticipantRepository::save)
                 .map(this::exchangeResponse)
-                .orElseThrow(() -> new ValueNotValidException("Cannot process contest participation"));
+                .orElseThrow(() -> new ValueNotValidException(MESSAGE.DATA_SAVE_ERROR));
     }
-
     @Override
     public List<ContestParticipantResponse> getListUserJoined(Long contestId) {
         return Optional.ofNullable(this.contestParticipantRepository.findByIdContestId(contestId))
@@ -45,7 +45,7 @@ public class ContestParticipantService implements IContestParticipantService {
                 .map(items -> items.stream()
                         .map(this::exchangeResponse)
                         .collect(Collectors.toList()))
-                .orElseThrow(() -> new ResourceNotFoundException("Can not find with contest id right now"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.DATA_RETRIEVAL_ERROR));
     }
     @Override
     public List<ContestParticipantResponse> getListContestUserJoined(Long userId) {
@@ -54,14 +54,16 @@ public class ContestParticipantService implements IContestParticipantService {
                 .map(items -> items.stream()
                         .map(this::exchangeResponse)
                         .collect(Collectors.toList()))
-                .orElseThrow(() -> new ResourceNotFoundException("Can not find with user id right now"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
 
     @Override
     public ContestParticipantResponse deleteByGroupKey(ContestParticipantKey contestParticipantKey) {
-        ContestParticipant contestParticipant = this.getRecordByKey(contestParticipantKey);
-        this.contestParticipantRepository.deleteById(contestParticipantKey);
-        return exchangeResponse(contestParticipant);
+        return Optional.of(contestParticipantKey)
+                .map(this::getRecordByKey)
+                .map(this::deleteRecord)
+                .map(this::exchangeResponse)
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.DELETE_OBJECT_ERROR));
     }
     @Override
     public ContestParticipantResponse updateTotalScore(ContestParticipantKey contestParticipantKey, Long problemId) {
@@ -69,8 +71,7 @@ public class ContestParticipantService implements IContestParticipantService {
         Problem problem = this.getProblem(problemId);
         this.validateProblem(problem);
         existingRecord.setTotalScore(existingRecord.getTotalScore()+problem.getPoints());
-        return exchangeResponse(this.contestParticipantRepository.save(
-                existingRecord));
+        return exchangeResponse(this.contestParticipantRepository.save(existingRecord));
     }
 
     @Override
@@ -84,9 +85,9 @@ public class ContestParticipantService implements IContestParticipantService {
     }
     public ContestParticipant validateKey(ContestParticipantKey contestParticipantKey){
         Contest contest = this.contestRepository.findById(
-                contestParticipantKey.getContestId()).orElseThrow(() -> new ResourceNotFoundException("Can not find contest"));
+                contestParticipantKey.getContestId()).orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
         User user = this.userRepository.findById(
-                contestParticipantKey.getUserId()).orElseThrow(() -> new ResourceNotFoundException("Can not find user"));
+                contestParticipantKey.getUserId()).orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
         return ContestParticipant.builder()
                 .id(contestParticipantKey)
                 .contest(contest)
@@ -102,7 +103,7 @@ public class ContestParticipantService implements IContestParticipantService {
     }
     public ContestParticipant checkValid(ContestParticipantDTO contestParticipantDTO){
         if(this.isUserJoinedContest(contestParticipantDTO.getContestId(), contestParticipantDTO.getUserId())){
-            throw new ValueNotValidException("Can not join contest right now");
+            throw new ValueNotValidException(MESSAGE.DATA_SAVE_ERROR);
         }
         return this.validateKey(this.exchangeKey(contestParticipantDTO));
     }
@@ -117,24 +118,28 @@ public class ContestParticipantService implements IContestParticipantService {
     private ContestParticipant getRecordByKey(ContestParticipantKey contestParticipantKey){
         this.validateKey(contestParticipantKey);
         if (!this.isUserJoinedContest(contestParticipantKey.getContestId(), contestParticipantKey.getUserId())){
-            throw new ValueNotValidException("Value not valid exception");
+            throw new ValueNotValidException(MESSAGE.INPUT_NOT_MATCH_EXCEPTION);
         }
         return this.contestParticipantRepository.findById(contestParticipantKey)
-                .orElseThrow(() -> new ResourceNotFoundException("Can not find record"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
     private Problem getProblem(Long problemId){
         return this.problemRepository.findById(problemId)
-                .orElseThrow(() -> new ResourceNotFoundException("Can not find value"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
     private void validateProblem(Problem problem){
         if (problem.getPoints()<0){
-            throw new ValueNotValidException("Can not submit right now");
+            throw new ValueNotValidException(MESSAGE.GENERAL_ERROR);
         }
     }
     private ContestParticipantDTO validateContestParticipation(ContestParticipantDTO dto) {
         if (isUserJoinedContest(dto.getContestId(), dto.getUserId())) {
-            throw new ValueNotValidException("Cannot join contest right now");
+            throw new ValueNotValidException(MESSAGE.GENERAL_ERROR);
         }
         return dto;
+    }
+    private ContestParticipant deleteRecord(ContestParticipant record) {
+        contestParticipantRepository.deleteById(record.getId());
+        return record;
     }
 }

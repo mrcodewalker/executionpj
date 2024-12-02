@@ -7,8 +7,12 @@ import com.example.zero2dev.exceptions.ValueNotValidException;
 import com.example.zero2dev.interfaces.IUserService;
 import com.example.zero2dev.mapper.UserMapper;
 import com.example.zero2dev.models.User;
+import com.example.zero2dev.repositories.ProblemRepository;
+import com.example.zero2dev.repositories.SubmissionRepository;
 import com.example.zero2dev.repositories.UserRepository;
 import com.example.zero2dev.responses.UserResponse;
+import com.example.zero2dev.storage.MESSAGE;
+import com.example.zero2dev.storage.SubmissionStatus;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.sql.Update;
 import org.springframework.stereotype.Service;
@@ -24,6 +28,7 @@ public class UserService implements IUserService {
     private final UserRepository userRepository;
     private final UserMapper mapper;
     private final String defaultAvatar = "";
+    private final SubmissionRepository submissionRepository;
     @Override
     public UserResponse createUser(UserDTO userDTO) {
         this.validAccount(userDTO);
@@ -35,6 +40,7 @@ public class UserService implements IUserService {
         exchangeUser.setPhoneNumber(phoneNumber);
         exchangeUser.setAvatarUrl(avatarUrl);
         exchangeUser.setIsActive(true);
+        exchangeUser.setTotalSolved(0L);
         return mapper.toResponse(this.userRepository.save(exchangeUser));
     }
     @Override
@@ -126,6 +132,21 @@ public class UserService implements IUserService {
                         .map(mapper::toResponse)
                         .collect(Collectors.toList()))
                 .orElseThrow(() -> new ResourceNotFoundException("Can not find match username"));
+    }
+    public void increaseSolved(Long userId){
+        User user = this.getUser(userId);
+        user.setTotalSolved(user.getTotalSolved()+1L);
+        this.userRepository.save(user);
+    }
+    public void updateTotalSolved(Long userId, SubmissionStatus status){
+        Long totalSolved = this.submissionRepository.countByUserIdAndStatus(userId, status);
+        User user = this.getUser(userId);
+        user.setTotalSolved(totalSolved);
+        this.userRepository.save(user);
+    }
+    private User getUser(Long userId){
+        return this.userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
 
     private User collectUser(Long id){

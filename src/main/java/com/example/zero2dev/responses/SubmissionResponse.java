@@ -1,5 +1,7 @@
 package com.example.zero2dev.responses;
 
+import com.example.zero2dev.models.Language;
+import com.example.zero2dev.models.Problem;
 import com.example.zero2dev.models.Submission;
 import com.example.zero2dev.storage.SubmissionStatus;
 import lombok.*;
@@ -13,21 +15,29 @@ public class SubmissionResponse {
     private Long id;
     private Long userId;
     private Long contestId;
-    private Long problemId;
-    private Long languageId;
-    private String status;
+    private Problem problem;
+    private Language language;
+    private SubmissionStatus status;
+    private Long failedAt;
+    private String message;
     private Long executionTime;
     private Long memoryUsed;
+    private Long totalTest;
+    private String sourceCode;
+    private boolean allTestPassed;
     public static SubmissionResponse exchangeEntity(Submission submission){
         return SubmissionResponse.builder()
                 .id(submission.getId())
                 .userId(submission.getUser().getId())
                 .executionTime(submission.getExecutionTime())
+                .message(submission.getMessage())
+                .totalTest(submission.getTotalTest())
+                .failedAt(submission.getFailedAt())
                 .contestId(submission.getContest().getId())
-                .languageId(submission.getLanguage().getId())
+                .language(submission.getLanguage())
                 .memoryUsed(submission.getMemoryUsed())
-                .status(String.valueOf(submission.getStatus()))
-                .problemId(submission.getProblem().getId())
+                .status(submission.getStatus())
+                .problem(submission.getProblem())
                 .build();
     }
 }

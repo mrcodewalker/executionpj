@@ -16,4 +16,5 @@ public interface ISubmissionService {
     SubmissionResponse deleteSubmissionById(Long id);
     List<SubmissionResponse> deleteSubmissionByUserId(Long userId);
     List<SubmissionResponse> deleteSubmissionByProblemId(Long problemId);
+    SubmissionResponse getSubmissionByUserIdAndProblemId(Long userId, Long problemId);
 }

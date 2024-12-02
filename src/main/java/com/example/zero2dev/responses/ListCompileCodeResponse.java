@@ -18,4 +18,5 @@ public class ListCompileCodeResponse {
     private boolean allTestsPassed;
     private int totalTests;
     private long failedAt;
+    private Long totalMemoryUsed;
 }

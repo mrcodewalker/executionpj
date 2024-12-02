@@ -49,6 +49,10 @@ public class CompileCodeService implements ICompileCodeService {
                 long totalExecutionTime = compileCodeResponses.stream()
                         .mapToLong(CompileCodeResponse::getExecutionTime)
                         .sum();
+                long totalMemoryUsed = compileCodeResponses.stream()
+                        .mapToLong(CompileCodeResponse::getMemoryUsed)
+                        .sum();
+
 
                 boolean allTestsPassed = true;
                 long failedAt = 0;
@@ -69,6 +73,7 @@ public class CompileCodeService implements ICompileCodeService {
                 compileResponse.setAllTestsPassed(allTestsPassed);
                 compileResponse.setFailedAt(failedAt+1);
                 compileResponse.setTotalTests(compileCodeDTO.getTestCases().size());
+                compileResponse.setTotalMemoryUsed(totalMemoryUsed);
 
                 return compileResponse;
             } else {

@@ -1,5 +1,6 @@
 package com.example.zero2dev.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,5 +29,6 @@ public class Language {
     private Boolean isActive = true;
 
     @OneToMany(mappedBy = "language")
+    @JsonIgnore
     private List<Submission> submissions;
 }

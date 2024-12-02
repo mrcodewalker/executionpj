@@ -12,9 +12,14 @@ import com.example.zero2dev.repositories.TestCaseReaderRepository;
 import com.example.zero2dev.responses.ListTestCaseReaderResponse;
 import com.example.zero2dev.responses.ProblemResponse;
 import com.example.zero2dev.responses.TestCaseReaderResponse;
+import com.example.zero2dev.storage.MESSAGE;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -72,7 +77,7 @@ public class TestCaseReaderService implements ITestCaseReaderService {
     }
     public TestCaseReader findTestCaseReaderById(Long id){
         return this.testCaseReaderRepository
-                .findById(id).orElseThrow(()->new ResourceNotFoundException("Can not find match test case"));
+                .findById(id).orElseThrow(()->new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
     public TestCaseReader newTestCaseReader(Long id, TestCaseReaderDTO testCaseReaderDTO){
         if (testCaseReaderDTO==null){
@@ -84,5 +89,28 @@ public class TestCaseReaderService implements ITestCaseReaderService {
             testCaseReader.setProblem(problem);
         }
         return testCaseReader;
+    }
+    public List<TestCase> getTestCases(Long problemId) {
+        Problem problem = this.problemService.findProblemById(problemId);
+        List<TestCaseReader> testCases = this.testCaseReaderRepository.getByProblemId(problemId);
+        List<TestCase> processedTestCases = new ArrayList<>();
+        for (TestCaseReader items : testCases){
+            try {
+                String inputContent = readFileContent(items.getInputPath());
+
+                String outputContent = readFileContent(items.getOutputPath());
+
+                TestCase testCase = new TestCase(inputContent, outputContent);
+
+                processedTestCases.add(testCase);
+            } catch (IOException e) {
+                throw new RuntimeException(MESSAGE.GENERAL_ERROR, e);
+            }
+        }
+        return processedTestCases;
+    }
+    private String readFileContent(String filePath) throws IOException {
+        Path path = Paths.get(filePath);
+        return Files.readString(path);
     }
 }

@@ -47,4 +47,28 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
             "GROUP BY s.status")
     List<Object[]> collectProblemGraph(
             @Param("problemId") Long problemId);
+    @Query(value = "SELECT s.contest_id,s.user_id,u.username, SUM(p.points) AS total_score," +
+            "SUM(s.execution_time) AS exec_time, SUM(s.memory_used) AS mem_used " +
+            "FROM submission s " +
+            "LEFT JOIN `user` u ON s.user_id = u.id " +
+            "LEFT JOIN problem p ON s.problem_id = p.id " +
+            "WHERE s.status = :status AND s.contest_id = :contestId " +
+            "GROUP BY s.contest_id,s.user_id,u.username " +
+            "ORDER BY total_score DESC, exec_time, mem_used ASC;", nativeQuery = true)
+    List<Object[]> getContestRankingByContestId(
+            @Param("contestId") Long contestId,
+            @Param("status") String status);
+//    @Query(value = "SELECT s.contest_id, s.user_id, COALESCE(u.username, 'Unknown') AS username, " +
+//            "COALESCE(SUM(p.points), 0) AS total_score, " +
+//            "COALESCE(SUM(s.execution_time), 0) AS exec_time, " +
+//            "COALESCE(SUM(s.memory_used), 0) AS mem_used " +
+//            "FROM submission s " +
+//            "LEFT JOIN user u ON s.user_id = u.id " +
+//            "LEFT JOIN problem p ON s.problem_id = p.id " +
+//            "WHERE s.status = :status AND s.contest_id = :contestId " +
+//            "GROUP BY s.contest_id, s.user_id, u.username " +
+//            "ORDER BY total_score DESC, exec_time ASC, mem_used ASC", nativeQuery = true)
+//    List<Object[]> getContestRankingByContestId(
+//            @Param("contestId") Long contestId,
+//            @Param("status") SubmissionStatus status);
 }

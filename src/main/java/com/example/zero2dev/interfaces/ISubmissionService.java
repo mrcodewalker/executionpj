@@ -1,6 +1,7 @@
 package com.example.zero2dev.interfaces;
 
 import com.example.zero2dev.dtos.SubmissionDTO;
+import com.example.zero2dev.responses.ContestRankingResponse;
 import com.example.zero2dev.responses.SubmissionResponse;
 
 import java.util.List;
@@ -17,4 +18,5 @@ public interface ISubmissionService {
     List<SubmissionResponse> deleteSubmissionByUserId(Long userId);
     List<SubmissionResponse> deleteSubmissionByProblemId(Long problemId);
     SubmissionResponse getSubmissionByUserIdAndProblemId(Long userId, Long problemId);
+    List<ContestRankingResponse> getRankingByContestId(Long contestId);
 }

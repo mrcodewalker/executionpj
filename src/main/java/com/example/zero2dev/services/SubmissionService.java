@@ -19,6 +19,7 @@ import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
 import javax.swing.text.html.Option;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -232,6 +233,30 @@ public class SubmissionService implements ISubmissionService {
         SubmissionResponse response = SubmissionResponse.exchangeEntity(submission);
         response.setSourceCode(sourceCode);
         return response;
+    }
+
+    @Override
+    public List<ContestRankingResponse> getRankingByContestId(Long contestId) {
+        List<Object[]> data = this.submissionRepository.getContestRankingByContestId(contestId, SubmissionStatus.ACCEPTED.toString());
+        System.out.println(SubmissionStatus.ACCEPTED+"");
+        List<ContestRankingResponse> responses = new ArrayList<>();
+        Long cnt = 1L;
+        for (Object[] clone: data){
+            ContestRankingResponse contestRankingResponse = this.mappingFromObject(clone);
+            contestRankingResponse.setRank(cnt++);
+            responses.add(contestRankingResponse);
+        }
+        return responses;
+    }
+    private ContestRankingResponse mappingFromObject(Object[] index){
+        return ContestRankingResponse.builder()
+                .contestId((long)index[0])
+                .userId((long)index[1])
+                .userName((String)index[2])
+                .totalScore((index[3] != null) ? ((BigDecimal)index[3]).toBigInteger().longValue() : 0L)
+                .totalExecutionTime((index[4]!=null) ? ((BigDecimal)index[4]).toBigInteger().longValue() : 0L)
+                .totalMemoryUsed((index[5]!=null) ? ((BigDecimal)index[5]).toBigInteger().longValue() : 0L)
+                .build();
     }
 
     private String getSourceCodeAC(Submission submission){

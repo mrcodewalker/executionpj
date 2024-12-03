@@ -23,7 +23,6 @@ public class RoleService implements IRoleService {
         this.validRole(roleDTO.getRoleName());
         return mapper.toResponse(this.roleRepository.save(mapper.toEntity(roleDTO)));
     }
-
     @Override
     public RoleResponse updateRole(Long id, RoleDTO roleDTO) {
         this.validRole(roleDTO.getRoleName());
@@ -32,7 +31,6 @@ public class RoleService implements IRoleService {
         newRole.setId(existingRole.getId());
         return mapper.toResponse(this.roleRepository.save(newRole));
     }
-
     @Override
     public void deleteRoleById(Long id) {
         try {
@@ -41,12 +39,10 @@ public class RoleService implements IRoleService {
             throw new ResourceNotFoundException(e.getMessage());
         }
     }
-
     @Override
     public RoleResponse getRoleById(Long id) {
         return mapper.toResponse(this.getRole(id));
     }
-
     @Override
     public RoleResponse getRoleByName(String name) {
         return null;

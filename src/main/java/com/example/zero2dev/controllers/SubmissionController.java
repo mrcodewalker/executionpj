@@ -17,6 +17,11 @@ public class SubmissionController {
             @RequestBody SubmissionDTO submissionDTO){
         return ResponseEntity.ok(this.submissionService.createSubmission(submissionDTO));
     }
+    @GetMapping("/ranking/contest/{id}")
+    public ResponseEntity<?> filterByContestId(
+            @PathVariable("id") Long id){
+        return ResponseEntity.ok(this.submissionService.getRankingByContestId(id));
+    }
     @GetMapping("/collect/user/{id}")
     public ResponseEntity<?> collectSubmissionByUsersId(
             @PathVariable("id") Long id){

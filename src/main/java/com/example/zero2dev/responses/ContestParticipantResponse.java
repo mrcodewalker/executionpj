@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 public class ContestParticipantResponse {
     private Contest contest;
     private Long userId;
-    private Long totalScore;
+    private Long totalAccepted;
+    private Long totalPoint;
     private LocalDateTime registeredTime;
 }

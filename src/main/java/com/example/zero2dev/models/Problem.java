@@ -37,12 +37,6 @@ public class Problem {
     @Column(name = "time_limit", columnDefinition = "BIGINT DEFAULT 1000")
     private Long timeLimit = 1000L;
 
-    @Column(name = "total_submission", columnDefinition = "BIGINT DEFAULT 0")
-    private Long totalSubmission = 0L;
-
-    @Column(name = "accepted_submission", columnDefinition = "BIGINT DEFAULT 0")
-    private Long acceptedSubmission = 0L;
-
     @Column(columnDefinition = "BIGINT DEFAULT 0")
     private Long points = 0L;
 

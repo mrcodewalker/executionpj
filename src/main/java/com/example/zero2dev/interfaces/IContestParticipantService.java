@@ -16,4 +16,5 @@ public interface IContestParticipantService {
     ContestParticipantResponse updateTotalScore(ContestParticipantKey contestParticipantKey, Long problemId);
     boolean isUserJoinedContest(Long contestId, Long userId);
     ContestParticipantResponse getDetailByGroupKey(ContestParticipantKey contestParticipantKey);
+    Long totalAcceptedByContest(Long contestId, Long userId);
 }

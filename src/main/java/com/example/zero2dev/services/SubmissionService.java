@@ -5,6 +5,7 @@ import com.example.zero2dev.dtos.CodeStorageDTO;
 import com.example.zero2dev.dtos.CompileCodeDTO;
 import com.example.zero2dev.dtos.SubmissionDTO;
 import com.example.zero2dev.exceptions.ResourceNotFoundException;
+import com.example.zero2dev.exceptions.ValueNotValidException;
 import com.example.zero2dev.interfaces.ISubmissionService;
 import com.example.zero2dev.mapper.SubmissionMapper;
 import com.example.zero2dev.models.*;
@@ -39,8 +40,12 @@ public class SubmissionService implements ISubmissionService {
     private final ProblemService problemService;
     private final ContestService contestService;
     private final UserService userService;
+    private final ContestParticipantService contestParticipantService;
     @Override
     public SubmissionResponse createSubmission(SubmissionDTO submissionDTO) {
+        if (!this.contestParticipantService.joinedContest(submissionDTO.getContestId(), submissionDTO.getUserId())){
+            throw new ValueNotValidException(MESSAGE.GENERAL_ERROR);
+        }
         contestService.findContestById(submissionDTO.getContestId());
         Optional<Submission> existingSubmission = this.getLatestSubmission(submissionDTO.getUserId(), submissionDTO.getProblemId());
         Submission submission = mapper.toEntity(submissionDTO);
@@ -56,7 +61,7 @@ public class SubmissionService implements ISubmissionService {
                 .sourceCode(submissionDTO.getSourceCode())
                 .testCases(testCaseReaderService.getTestCases(problem.getId()))
                 .build();
-        if (compileCodeDTO.getTestCases().size()==0){
+        if (compileCodeDTO.getTestCases().isEmpty()){
             throw new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
         }
         ListCompileCodeResponse compileCodeResponse = this.compileCodeService.compileCode(compileCodeDTO);
@@ -70,34 +75,33 @@ public class SubmissionService implements ISubmissionService {
         submission.setExecutionTime(compileCodeResponse.getTotalExecutionTime());
         int failedAt = 0;
         String message = "";
+        String detailMessage = "Passed";
         if (compileCodeResponse.isAllTestsPassed() && compileCodeResponse.getFailedAt()<=0){
             submission.setStatus(SubmissionStatus.ACCEPTED);
             message = MESSAGE.ACCEPTED_STATUS;
             isAllTestPassed = true;
         } else {
-            if (!compileCodeResponse.isAllTestsPassed() && compileCodeResponse.getFailedAt() > 0) {
-                submission.setStatus(SubmissionStatus.WRONG_ANSWER);
-                failedAt = (int) compileCodeResponse.getFailedAt();
-                message = MESSAGE.WRONG_ANSWER;
-            }
             List<CompileCodeResponse> list = compileCodeResponse.getCompileCodeResponses();
             for (int i = 0; i < list.size(); i++) {
                 if (list.get(i).isTimeLimit()||"time limit exceeded".equalsIgnoreCase(list.get(i).getMessage())) {
                     submission.setStatus(SubmissionStatus.TIME_LIMIT_EXCEEDED);
                     failedAt = i + 1;
                     message = MESSAGE.TIME_LIMIT_EXCEEDED;
+                    detailMessage = list.get(i).getMessage();
                     break;
                 }
                 if (this.isCompileError(list.get(i).getMessage())) {
                     submission.setStatus(SubmissionStatus.COMPILE_ERROR);
                     failedAt = i + 1;
                     message = MESSAGE.COMPILE_ERROR;
+                    detailMessage = list.get(i).getMessage();
                     break;
                 }
                 if (!list.get(i).isPassed()) {
                     submission.setStatus(SubmissionStatus.WRONG_ANSWER);
                     failedAt = i + 1;
                     message = MESSAGE.WRONG_ANSWER;
+                    detailMessage = list.get(i).getMessage();
                     break;
                 }
             }
@@ -109,15 +113,13 @@ public class SubmissionService implements ISubmissionService {
         if (submission.getStatus().equals(SubmissionStatus.ACCEPTED)) {
             this.codeStorageService.createCodeStorage(this.parseDTO(
                     submission, submissionDTO.getSourceCode()));
-            this.problemService.incrementAcceptedSubmissionCount(submission.getProblem().getId(), SubmissionStatus.ACCEPTED);
-            this.userService.updateTotalSolved(submission.getUser().getId(), SubmissionStatus.ACCEPTED);
         }
-        this.problemService.increaseValue(submission.getProblem());
         response.setFailedAt((long)failedAt);
         response.setMessage(message);
         response.setLanguage(language);
         response.setAllTestPassed(isAllTestPassed);
         response.setTotalTest((long)totalTest);
+        response.setDetailMessage(detailMessage);
         return response;
     }
     @Override

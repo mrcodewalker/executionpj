@@ -38,9 +38,6 @@ public class User {
     @Column(name = "avatar_url")
     private String avatarUrl;
 
-    @Column(name = "total_solved", columnDefinition = "BIGINT DEFAULT 0")
-    private Long totalSolved = 0L;
-
     @Column(name = "created_at", updatable = false)
     @CreationTimestamp
     private LocalDateTime createdAt;

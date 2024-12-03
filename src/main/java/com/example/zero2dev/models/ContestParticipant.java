@@ -33,7 +33,4 @@ public class ContestParticipant {
     @Column(name = "registered_time")
     @CreationTimestamp
     private LocalDateTime registeredTime;
-
-    @Column(name = "total_score", columnDefinition = "BIGINT DEFAULT 0")
-    private Long totalScore = 0L;
 }

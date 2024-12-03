@@ -24,6 +24,7 @@ public class SubmissionResponse {
     private Long memoryUsed;
     private Long totalTest;
     private String sourceCode;
+    private String detailMessage;
     private boolean allTestPassed;
     public static SubmissionResponse exchangeEntity(Submission submission){
         return SubmissionResponse.builder()

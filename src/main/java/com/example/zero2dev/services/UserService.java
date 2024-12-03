@@ -40,7 +40,6 @@ public class UserService implements IUserService {
         exchangeUser.setPhoneNumber(phoneNumber);
         exchangeUser.setAvatarUrl(avatarUrl);
         exchangeUser.setIsActive(true);
-        exchangeUser.setTotalSolved(0L);
         return mapper.toResponse(this.userRepository.save(exchangeUser));
     }
     @Override
@@ -111,7 +110,7 @@ public class UserService implements IUserService {
                 .map(users -> users.stream()
                         .map(mapper::toResponse)
                         .collect(Collectors.toList()))
-                .orElseThrow(() -> new ResourceNotFoundException("Can not find match email"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
 
     @Override
@@ -121,7 +120,7 @@ public class UserService implements IUserService {
                 .map(phone -> phone.stream()
                         .map(mapper::toResponse)
                         .collect(Collectors.toList()))
-                .orElseThrow(() -> new ResourceNotFoundException("Can not find match phoneNumber"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
 
     @Override
@@ -131,18 +130,12 @@ public class UserService implements IUserService {
                 .map(users -> users.stream()
                         .map(mapper::toResponse)
                         .collect(Collectors.toList()))
-                .orElseThrow(() -> new ResourceNotFoundException("Can not find match username"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
-    public void increaseSolved(Long userId){
-        User user = this.getUser(userId);
-        user.setTotalSolved(user.getTotalSolved()+1L);
-        this.userRepository.save(user);
-    }
-    public void updateTotalSolved(Long userId, SubmissionStatus status){
-        Long totalSolved = this.submissionRepository.countByUserIdAndStatus(userId, status);
-        User user = this.getUser(userId);
-        user.setTotalSolved(totalSolved);
-        this.userRepository.save(user);
+
+    @Override
+    public Long totalAccepted(Long userId) {
+        return this.submissionRepository.countByUserIdAndStatus(userId, SubmissionStatus.ACCEPTED);
     }
     private User getUser(Long userId){
         return this.userRepository.findById(userId)
@@ -151,22 +144,22 @@ public class UserService implements IUserService {
 
     private User collectUser(Long id){
         return this.userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Can not find user"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
     private boolean existByPhoneNumber(String phoneNumber){
         return phoneNumber != null && phoneNumber.length() > 8 && this.userRepository.existsByPhoneNumber(phoneNumber);
     }
     private User collectUserByUserName(String username){
         return this.userRepository.getUserByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("An error has been detected"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.GENERAL_ERROR));
     }
     private User collectUserByEmail(String email){
         return this.userRepository.getUserByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("An error has been detected"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.GENERAL_ERROR));
     }
     private User collectUserByPhoneNumber(String phoneNumber){
         return this.userRepository.getUserByPhoneNumber(phoneNumber)
-                .orElseThrow(() -> new ResourceNotFoundException("An error has been detected"));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.GENERAL_ERROR));
     }
     private boolean existByEmail(String email){
         return email != null && email.length()>6 && this.userRepository.existsByEmail(email);
@@ -176,16 +169,16 @@ public class UserService implements IUserService {
     }
     private void validAccount(UserDTO userDTO){
         if (!userDTO.getEmail().contains("@gmail.com")){
-            throw new ValueNotValidException("Can not accept this value right now");
-        }
-        if (this.existByEmail(userDTO.getEmail())){
-            throw new ValueNotValidException("An email has been existed");
-        }
-        if (this.existByPhoneNumber(userDTO.getPhoneNumber())){
-            throw new ValueNotValidException("A phone number has been existed");
+            throw new ValueNotValidException(MESSAGE.INPUT_NOT_MATCH_EXCEPTION);
         }
         if (this.existByUserName(userDTO.getUsername())) {
-            throw new ValueNotValidException("An username has been existed");
+            throw new ValueNotValidException(MESSAGE.EXISTED_RECORD_ERROR);
+        }
+        if (this.existByEmail(userDTO.getEmail())){
+            throw new ValueNotValidException(MESSAGE.EXISTED_RECORD_ERROR);
+        }
+        if (this.existByPhoneNumber(userDTO.getPhoneNumber())){
+            throw new ValueNotValidException(MESSAGE.EXISTED_RECORD_ERROR);
         }
     }
     private User exchangeEntity(UpdateUserDTO updateUserDTO){

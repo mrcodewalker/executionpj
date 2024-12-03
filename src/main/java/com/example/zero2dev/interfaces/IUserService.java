@@ -21,4 +21,5 @@ public interface IUserService {
     List<UserResponse> getUserByMatchEmail(String email);
     List<UserResponse> getUserByMatchPhoneNumber(String phoneNumber);
     List<UserResponse> getUserByMatchUserName(String username);
+    Long totalAccepted(Long userId);
 }

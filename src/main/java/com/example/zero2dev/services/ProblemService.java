@@ -22,6 +22,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -38,8 +41,8 @@ public class ProblemService implements IProblemService {
         Problem problem = ProblemDTO.createFromEntity(category, problemDTO);
 
         Problem savedProblem = problemRepository.save(problem);
-        ProblemResponse response = problemMapper.toResponse(savedProblem);
-        response.setCategoryId(savedProblem.getCategory().getId());
+        ProblemResponse response = this.exchangeEntity(savedProblem);
+        response.setCategory(savedProblem.getCategory());
         return response;
     }
 
@@ -51,7 +54,7 @@ public class ProblemService implements IProblemService {
         problemMapper.updateProblemFromDto(problemDTO, problem);
 
         Problem updatedProblem = problemRepository.save(problem);
-        return problemMapper.toResponse(updatedProblem);
+        return this.exchangeEntity(updatedProblem);
     }
 
     @Override
@@ -63,8 +66,7 @@ public class ProblemService implements IProblemService {
 
     @Override
     public ProblemResponse getProblemById(Long id) {
-        Problem problem = this.findProblemById(id);
-        return problemMapper.toResponse(problem);
+        return this.exchangeEntity(this.findProblemById(id));
     }
 
     @Override
@@ -73,18 +75,18 @@ public class ProblemService implements IProblemService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
         Page<Problem> problemPage = problemRepository.searchProblems(title, difficult,
                 categoryId, pageable);
-        return problemPage.map(problemMapper::toResponse);
+        return problemPage.map(this::exchangeEntity);
     }
 
     @Override
     @Transactional
     public void incrementSubmissionCount(Long problemId) {
         Problem problem = this.findProblemById(problemId);
-        problem.setTotalSubmission(problem.getTotalSubmission() + 1);
+//        problem.setTotalSubmission(problem.getTotalSubmission() + 1);
         problemRepository.save(problem);
     }
     public void increaseValue(Problem problem) {
-        problem.setTotalSubmission(problem.getTotalSubmission() + 1);
+//        problem.setTotalSubmission(problem.getTotalSubmission() + 1);
         problemRepository.save(problem);
     }
 
@@ -93,9 +95,21 @@ public class ProblemService implements IProblemService {
     public void incrementAcceptedSubmissionCount(Long problemId, SubmissionStatus status) {
         Problem problem = this.findProblemById(problemId);
         Long totalAccepted = this.submissionRepository.countByProblemIdAndStatus(problemId, status);
-        problem.setAcceptedSubmission(totalAccepted);
+//        problem.setAcceptedSubmission(totalAccepted);
         problemRepository.save(problem);
     }
+
+    @Override
+    public Long totalAccepted(Long problemId) {
+        return this.submissionRepository.countByProblemIdAndStatus(
+                problemId, SubmissionStatus.ACCEPTED);
+    }
+
+    @Override
+    public Long totalSubmission(Long problemId) {
+        return this.submissionRepository.countSubmissionByProblemId(problemId);
+    }
+
     public Problem findProblemById(Long id){
         return problemRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
@@ -103,5 +117,21 @@ public class ProblemService implements IProblemService {
     public Category findCategoryById(Long id){
         return categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
+    }
+    public ProblemResponse exchangeEntity(Problem problem){
+        ProblemResponse response = problemMapper.toResponse(problem);
+        response.setCategory(problem.getCategory());
+        List<Object[]> data = this.submissionRepository.collectProblemGraph(problem.getId());
+        Long sum = 0L;
+        Long totalAccepted = 0L;
+        for (Object[] clone: data){
+            if (clone[0].equals(SubmissionStatus.ACCEPTED)){
+                totalAccepted = (Long) clone[1];
+            }
+            sum += (Long) clone[1];
+        }
+        response.setAcceptedSubmission(totalAccepted);
+        response.setTotalSubmission(sum);
+        return response;
     }
 }

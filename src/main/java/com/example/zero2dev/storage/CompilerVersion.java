@@ -1,6 +1,6 @@
 package com.example.zero2dev.storage;
 
-public enum CompilerVersion {
+public enum     CompilerVersion {
     C89, C99, C11, C17,
 
     CPP_11, CPP_14, CPP_17, CPP_20,

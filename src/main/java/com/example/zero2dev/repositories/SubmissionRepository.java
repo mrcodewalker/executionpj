@@ -30,4 +30,21 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     Long countByUserIdAndStatus(@Param("userId") Long userId, @Param("status") SubmissionStatus status);
     @Query("SELECT COUNT(s) FROM Submission s WHERE s.problem.id = :problemId AND s.status = :status")
     Long countByProblemIdAndStatus(@Param("problemId") Long problemId, @Param("status") SubmissionStatus status);
+    @Query("SELECT COUNT(s) FROM Submission s WHERE s.problem.id = :problemId")
+    Long countSubmissionByProblemId(@Param("problemId") Long problemId);
+    @Query("SELECT COUNT(s), SUM(s.problem.points) " +
+            "FROM Submission s " +
+            "WHERE s.contest.id = :contestId " +
+            "AND s.user.id = :userId " +
+            "AND s.status = :status")
+    List<Object[]> countAndSumByContestAndUser(
+            @Param("contestId") Long contestId,
+            @Param("userId") Long userId,
+            @Param("status") SubmissionStatus status);
+    @Query("SELECT s.status, COUNT(s) " +
+            "FROM Submission s " +
+            "WHERE s.problem.id = :problemId " +
+            "GROUP BY s.status")
+    List<Object[]> collectProblemGraph(
+            @Param("problemId") Long problemId);
 }

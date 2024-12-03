@@ -15,4 +15,6 @@ public interface IProblemService {
                                     Long categoryId, int page, int size);
     void incrementSubmissionCount(Long problemId);
     void incrementAcceptedSubmissionCount(Long problemId, SubmissionStatus status);
+    Long totalAccepted(Long problemId);
+    Long totalSubmission(Long problemId);
 }

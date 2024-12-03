@@ -6,15 +6,15 @@ import com.example.zero2dev.exceptions.TimeNotValidException;
 import com.example.zero2dev.exceptions.ValueNotValidException;
 import com.example.zero2dev.interfaces.IContestParticipantService;
 import com.example.zero2dev.models.*;
-import com.example.zero2dev.repositories.ContestParticipantRepository;
-import com.example.zero2dev.repositories.ContestRepository;
-import com.example.zero2dev.repositories.ProblemRepository;
-import com.example.zero2dev.repositories.UserRepository;
+import com.example.zero2dev.repositories.*;
 import com.example.zero2dev.responses.ContestParticipantResponse;
 import com.example.zero2dev.storage.MESSAGE;
+import com.example.zero2dev.storage.SubmissionStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -27,7 +27,7 @@ public class ContestParticipantService implements IContestParticipantService {
     private final ContestRepository contestRepository;
     private final UserRepository userRepository;
     private final ProblemRepository problemRepository;
-
+    private final SubmissionRepository submissionRepository;
     @Override
     public ContestParticipantResponse joinContest(ContestParticipantDTO contestParticipantDTO) {
         return Optional.of(contestParticipantDTO)
@@ -70,7 +70,6 @@ public class ContestParticipantService implements IContestParticipantService {
         ContestParticipant existingRecord = this.getRecordByKey(contestParticipantKey);
         Problem problem = this.getProblem(problemId);
         this.validateProblem(problem);
-        existingRecord.setTotalScore(existingRecord.getTotalScore()+problem.getPoints());
         return exchangeResponse(this.contestParticipantRepository.save(existingRecord));
     }
 
@@ -83,6 +82,13 @@ public class ContestParticipantService implements IContestParticipantService {
     public ContestParticipantResponse getDetailByGroupKey(ContestParticipantKey contestParticipantKey) {
         return exchangeResponse(this.getRecordByKey(contestParticipantKey));
     }
+
+    @Override
+    public Long totalAcceptedByContest(Long contestId, Long userId) {
+//        return (long)this.submissionRepository.selectAllAccepted(contestId, userId, SubmissionStatus.ACCEPTED).size();
+        return 0L;
+    }
+
     public ContestParticipant validateKey(ContestParticipantKey contestParticipantKey){
         Contest contest = this.contestRepository.findById(
                 contestParticipantKey.getContestId()).orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
@@ -92,7 +98,6 @@ public class ContestParticipantService implements IContestParticipantService {
                 .id(contestParticipantKey)
                 .contest(contest)
                 .user(user)
-                .totalScore(0L)
                 .build();
     }
     public ContestParticipantKey exchangeKey(ContestParticipantDTO contestParticipantDTO){
@@ -108,12 +113,20 @@ public class ContestParticipantService implements IContestParticipantService {
         return this.validateKey(this.exchangeKey(contestParticipantDTO));
     }
     private ContestParticipantResponse exchangeResponse(ContestParticipant contestParticipant){
-        return ContestParticipantResponse.builder()
+        ContestParticipantResponse response = ContestParticipantResponse.builder()
                 .contest(contestParticipant.getContest())
                 .userId(contestParticipant.getUser().getId())
                 .registeredTime(contestParticipant.getRegisteredTime())
-                .totalScore(contestParticipant.getTotalScore())
                 .build();
+
+         Object[] data = this.submissionRepository.countAndSumByContestAndUser(contestParticipant.getContest().getId(),
+                contestParticipant.getUser().getId(), SubmissionStatus.ACCEPTED).get(0);
+//            System.out.println(data + "KEY");
+            Long totalAccepted = (data[0] instanceof Long) ? (Long) data[0] : 0L;
+            Long totalPoint = (data[1] instanceof Long) ? (Long) data[1] : 0L;
+            response.setTotalAccepted(totalAccepted);
+            response.setTotalPoint(totalPoint);
+        return response;
     }
     private ContestParticipant getRecordByKey(ContestParticipantKey contestParticipantKey){
         this.validateKey(contestParticipantKey);
@@ -141,5 +154,8 @@ public class ContestParticipantService implements IContestParticipantService {
     private ContestParticipant deleteRecord(ContestParticipant record) {
         contestParticipantRepository.deleteById(record.getId());
         return record;
+    }
+    public boolean joinedContest(Long contestId, Long userId){
+        return this.contestParticipantRepository.existsByContest_IdAndUser_Id(contestId, userId);
     }
 }

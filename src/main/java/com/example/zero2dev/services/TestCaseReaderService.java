@@ -81,7 +81,7 @@ public class TestCaseReaderService implements ITestCaseReaderService {
     }
     public TestCaseReader newTestCaseReader(Long id, TestCaseReaderDTO testCaseReaderDTO){
         if (testCaseReaderDTO==null){
-            throw new ResourceNotFoundException("Can not update right now");
+            throw new ResourceNotFoundException(MESSAGE.GENERAL_ERROR);
         }
         TestCaseReader testCaseReader = this.findTestCaseReaderById(id);
         if(!testCaseReader.getProblem().getId().equals(testCaseReaderDTO.getProblemId())) {
@@ -111,6 +111,9 @@ public class TestCaseReaderService implements ITestCaseReaderService {
     }
     private String readFileContent(String filePath) throws IOException {
         Path path = Paths.get(filePath);
+        if (!Files.exists(path)) {
+            throw new ResourceNotFoundException(MESSAGE.GENERAL_ERROR);
+        }
         return Files.readString(path);
     }
 }

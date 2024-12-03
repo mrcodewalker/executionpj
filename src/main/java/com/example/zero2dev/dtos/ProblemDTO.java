@@ -34,13 +34,11 @@ public class ProblemDTO {
     public static ProblemResponse exchangeEntity(Problem problem){
         return ProblemResponse.builder()
                 .description(problem.getDescription())
-                .acceptedSubmission(problem.getAcceptedSubmission())
-                .categoryId(problem.getId())
+                .category(problem.getCategory())
                 .difficult(problem.getDifficult())
                 .points(problem.getPoints())
                 .timeLimit(problem.getTimeLimit())
                 .title(problem.getTitle())
-                .totalSubmission(problem.getTotalSubmission())
                 .build();
     }
     public static Problem createFromEntity(Category category, ProblemDTO problemDTO){
@@ -51,8 +49,6 @@ public class ProblemDTO {
                 .category(category)
                 .timeLimit(problemDTO.getTimeLimit())
                 .points(problemDTO.getPoints())
-                .acceptedSubmission(0L)
-                .totalSubmission(0L)
                 .isActive(true)
                 .build();
     }

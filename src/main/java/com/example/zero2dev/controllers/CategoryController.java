@@ -52,4 +52,8 @@ public class CategoryController {
     ){
         return ResponseEntity.ok(this.categoryService.getCategoryById(id));
     }
+    @GetMapping("/filter/list")
+    public ResponseEntity<?> getLIstCategory(){
+        return ResponseEntity.ok(this.categoryService.getListCategory());
+    }
 }

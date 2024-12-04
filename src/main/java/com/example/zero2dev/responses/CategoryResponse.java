@@ -11,9 +11,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 public class CategoryResponse {
+    private Long id;
     private String name;
-    public static CategoryResponse fromEntity(Category category){
+    public static CategoryResponse toResponse(Category category){
         return CategoryResponse.builder()
+                .id(category.getId())
                 .name(category.getName())
                 .build();
     }

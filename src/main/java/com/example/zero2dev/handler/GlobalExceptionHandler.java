@@ -1,9 +1,6 @@
 package com.example.zero2dev.handler;
 
-import com.example.zero2dev.exceptions.DuplicateVersionException;
-import com.example.zero2dev.exceptions.ResourceNotFoundException;
-import com.example.zero2dev.exceptions.TimeNotValidException;
-import com.example.zero2dev.exceptions.ValueNotValidException;
+import com.example.zero2dev.exceptions.*;
 import com.example.zero2dev.responses.ErrorResponse;
 import org.springframework.boot.context.config.ConfigDataResourceNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -30,6 +27,15 @@ public class GlobalExceptionHandler {
     }
     @ExceptionHandler(ValueNotValidException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ValueNotValidException ex) {
+
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                ex.getMessage()
+        );
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+    @ExceptionHandler(ForbiddenRequestException.class)
+    public ResponseEntity<ErrorResponse> forbiddenRequestException(ForbiddenRequestException ex) {
 
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.NOT_FOUND.value(),

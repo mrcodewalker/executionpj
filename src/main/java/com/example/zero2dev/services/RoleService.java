@@ -62,4 +62,8 @@ public class RoleService implements IRoleService {
             throw new ValueNotValidException(MESSAGE.INPUT_NOT_MATCH_EXCEPTION);
         }
     }
+    public Role getRoleNew(Long id){
+        return roleRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
+    }
 }

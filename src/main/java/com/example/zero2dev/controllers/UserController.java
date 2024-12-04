@@ -1,5 +1,6 @@
 package com.example.zero2dev.controllers;
 
+import com.example.zero2dev.dtos.LoginDTO;
 import com.example.zero2dev.dtos.UpdateUserDTO;
 import com.example.zero2dev.dtos.UserDTO;
 import com.example.zero2dev.services.UserService;
@@ -14,11 +15,16 @@ import java.sql.PreparedStatement;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
-    @PostMapping("/create")
+    @PostMapping("/register")
     public ResponseEntity<?> createUser(
             @RequestBody UserDTO userDTO){
         return ResponseEntity.ok(
                 this.userService.createUser(userDTO));
+    }
+    @PostMapping("/login")
+    public ResponseEntity<?> loginUser(
+            @RequestBody LoginDTO loginDTO){
+        return ResponseEntity.ok(this.userService.login(loginDTO));
     }
     @PostMapping("/update/info")
     public ResponseEntity<?> updateUserInfo(

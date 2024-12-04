@@ -15,6 +15,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class LanguageService implements ILanguageService {
@@ -40,9 +44,7 @@ public class LanguageService implements ILanguageService {
 
     @Override
     public List<LanguageResponse> getAllLanguage() {
-        return this.languageRepository.findAll().stream()
-                .map(mapper::toResponse)
-                .toList();
+        return this.getListCompilerVersion();
     }
 
     @Override
@@ -58,6 +60,19 @@ public class LanguageService implements ILanguageService {
         mapper.updateLanguageFromDTO(languageDTO, language);
         this.checkExistVersion(languageDTO);
         return mapper.toResponse(this.languageRepository.save(language));
+    }
+    public List<LanguageResponse> getListCompilerVersion(){
+        return Optional.of(this.languageRepository.findAll())
+                .filter(items -> !items.isEmpty())
+                .map(items -> items.stream()
+                        .map(language -> LanguageResponse.builder()
+                                .name(language.getName())
+                                .id(language.getId())
+                                .compilerVersion(CompilerVersion.valueOf(language.getVersion()))
+                                .build())
+                        .collect(Collectors.toList()))
+
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
     public Language findLanguageById(Long id){
         return this.languageRepository.findById(id)

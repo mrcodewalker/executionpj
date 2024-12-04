@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -14,6 +15,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByPhoneNumber(String phoneNumber);
     boolean existsByEmail(String email);
     boolean existsByUsername(String username);
+    @Query("SELECT u FROM User u WHERE u.username = :username AND u.isActive = true")
     Optional<User> getUserByUsername(String username);
     Optional<User> getUserByEmail(String email);
     Optional<User> getUserByPhoneNumber(String phoneNumber);
@@ -29,4 +31,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findMatchPhoneNumber(@Param("phoneNumber") String phoneNumber);
     @Query("SELECT u FROM User u WHERE u.username LIKE %:username%")
     List<User> findMatchUsername(@Param("username") String username);
+    @Query("SELECT " +
+            "CASE WHEN COUNT(CASE WHEN u.email LIKE %:email% THEN 1 END) > 0 THEN true ELSE false END AS emailExists, " +
+            "CASE WHEN COUNT(CASE WHEN u.username = :username THEN 1 END) > 0 THEN true ELSE false END AS usernameExists " +
+            "FROM User u")
+    Map<String, Boolean> checkUserExistence(
+            @Param("email") String email,
+            @Param("username") String username
+    );
 }

@@ -1,5 +1,6 @@
 package com.example.zero2dev.interfaces;
 
+import com.example.zero2dev.dtos.LoginDTO;
 import com.example.zero2dev.dtos.UpdateUserDTO;
 import com.example.zero2dev.dtos.UserDTO;
 import com.example.zero2dev.responses.UserResponse;
@@ -22,4 +23,5 @@ public interface IUserService {
     List<UserResponse> getUserByMatchPhoneNumber(String phoneNumber);
     List<UserResponse> getUserByMatchUserName(String username);
     Long totalAccepted(Long userId);
+    UserResponse login(LoginDTO loginDTO);
 }

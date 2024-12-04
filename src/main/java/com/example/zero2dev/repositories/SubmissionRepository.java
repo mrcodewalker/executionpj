@@ -3,6 +3,7 @@ package com.example.zero2dev.repositories;
 import com.example.zero2dev.dtos.SubmissionDTO;
 import com.example.zero2dev.models.Submission;
 import com.example.zero2dev.storage.SubmissionStatus;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -58,17 +59,30 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     List<Object[]> getContestRankingByContestId(
             @Param("contestId") Long contestId,
             @Param("status") String status);
-//    @Query(value = "SELECT s.contest_id, s.user_id, COALESCE(u.username, 'Unknown') AS username, " +
-//            "COALESCE(SUM(p.points), 0) AS total_score, " +
-//            "COALESCE(SUM(s.execution_time), 0) AS exec_time, " +
-//            "COALESCE(SUM(s.memory_used), 0) AS mem_used " +
-//            "FROM submission s " +
-//            "LEFT JOIN user u ON s.user_id = u.id " +
-//            "LEFT JOIN problem p ON s.problem_id = p.id " +
-//            "WHERE s.status = :status AND s.contest_id = :contestId " +
-//            "GROUP BY s.contest_id, s.user_id, u.username " +
-//            "ORDER BY total_score DESC, exec_time ASC, mem_used ASC", nativeQuery = true)
-//    List<Object[]> getContestRankingByContestId(
-//            @Param("contestId") Long contestId,
-//            @Param("status") SubmissionStatus status);
+    @Query(value = "SELECT c.user_id, c.problem_id, " +
+            "c.source_code, s.execution_time, s.memory_used, s.message, s.failed_at, s.total_test, " +
+            "s.`status`, l.`name`, l.`version`, s.id, s.contest_id " +
+            "FROM submission s " +
+            "JOIN `language` l ON l.id = s.id " +
+            "JOIN code_storage c ON s.problem_id = c.problem_id AND s.`status` = :status " +
+            "WHERE c.user_id = :userId AND c.problem_id = :problemId AND s.`status` = :status " +
+            "GROUP BY c.user_id, c.problem_id;", nativeQuery = true)
+    List<Object[]> getDetailSubmissionByUserIdAndProblemId(
+            @Param("userId") Long userId,
+            @Param("problemId") Long problemId,
+            @Param("status") String status);
+    @Query("SELECT u, p, l, c FROM User u " +
+            "JOIN Problem p ON p.id = :problemId " +
+            "JOIN Language l ON l.version = :compilerVersion " +
+            "JOIN Contest c ON c.id = :contestId " +
+            "WHERE u.id = :userId " +
+            "AND u.isActive = true " +
+            "AND p.isActive = true " +
+            "AND l.isActive = true")
+    List<Object[]> findSubmissionValidationData(
+            @Param("userId") Long userId,
+            @Param("problemId") Long problemId,
+            @Param("contestId") Long contestId,
+            @Param("compilerVersion") String compilerVersion
+    );
 }

@@ -35,7 +35,36 @@ public class Role {
     private LocalDateTime updatedAt;
     public static final String ADMIN = "ADMIN";
     public static final String USER = "USER";
-    public static final String MODERATOR = "ADMIN";
     public static final String MANAGER = "MANAGER";
     public static final String DEVELOPER = "DEVELOPER";
+    public static String[] fullRoleAccess() {
+        return new String[] {
+                Role.USER,
+                Role.ADMIN,
+                Role.DEVELOPER,
+                Role.MANAGER,
+        };
+    }
+    public static String[] teamAccess() {
+        return new String[] {
+                Role.ADMIN,
+                Role.DEVELOPER,
+                Role.MANAGER
+        };
+    }
+    public static String[] managerAccess(){
+        return new String[] {
+                Role.ADMIN,
+                Role.MANAGER
+        };
+    }
+    public static String[] developerAccess(){
+        return new String[] {
+                Role.ADMIN,
+                Role.DEVELOPER
+        };
+    }
+    public static String adminAccess(){
+        return Role.ADMIN;
+    }
 }

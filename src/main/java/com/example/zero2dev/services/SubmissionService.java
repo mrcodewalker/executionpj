@@ -17,6 +17,7 @@ import com.example.zero2dev.storage.SubmissionStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.swing.text.html.Option;
 import java.math.BigDecimal;
@@ -44,84 +45,39 @@ public class SubmissionService implements ISubmissionService {
     private final ContestParticipantService contestParticipantService;
     @Override
     public SubmissionResponse createSubmission(SubmissionDTO submissionDTO) {
-        if (!this.contestParticipantService.joinedContest(submissionDTO.getContestId(), submissionDTO.getUserId())){
+        if (!contestParticipantService.joinedContest(submissionDTO.getContestId(), submissionDTO.getUserId())) {
             throw new ValueNotValidException(MESSAGE.GENERAL_ERROR);
         }
-        contestService.findContestById(submissionDTO.getContestId());
-        Optional<Submission> existingSubmission = this.getLatestSubmission(submissionDTO.getUserId(), submissionDTO.getProblemId());
-        Submission submission = mapper.toEntity(submissionDTO);
-        submission.setId(existingSubmission.map(Submission::getId).orElse(null));
-        submission.setCreatedAt(existingSubmission.map(Submission::getCreatedAt).orElse(LocalDateTime.now()));
-        Pair<Pair<User, Problem>, Language> data = this.checkValidSubmission(submissionDTO);
-        Language language = this.getLanguageByCompilerVersion(submissionDTO.getCompilerVersion());
-        Problem problem = data.getFirst().getSecond();
-        CompileCodeDTO compileCodeDTO = CompileCodeDTO.builder()
-                .compilerVersion(CompilerVersion.valueOf(submissionDTO.getCompilerVersion()))
-                .language(com.example.zero2dev.storage.Language.valueOf(language.getName()))
-                .timeLimit(problem.getTimeLimit())
-                .sourceCode(submissionDTO.getSourceCode())
-                .testCases(testCaseReaderService.getTestCases(problem.getId()))
-                .build();
-        if (compileCodeDTO.getTestCases().isEmpty()){
+
+        Optional<Submission> existingSubmission = getLatestSubmissionValue(submissionDTO.getUserId(), submissionDTO.getProblemId());
+        Submission submission = prepareSubmission(submissionDTO, existingSubmission);
+
+        CompileCodeDTO compileCodeDTO = buildCompileCodeDTO(submissionDTO, submission);
+        if (compileCodeDTO.getTestCases().isEmpty()) {
             throw new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
         }
-        ListCompileCodeResponse compileCodeResponse = this.compileCodeService.compileCode(compileCodeDTO);
-        int totalTest = compileCodeResponse.getTotalTests();
-        boolean isAllTestPassed = false;
-        submission.setMemoryUsed(compileCodeResponse.getTotalMemoryUsed());
-        submission.setProblem(problem);
-        submission.setContest(this.getContest(submissionDTO.getContestId()));
-        submission.setUser(this.getUser(submissionDTO.getUserId()));
-        submission.setLanguage(language);
-        submission.setExecutionTime(compileCodeResponse.getTotalExecutionTime());
-        int failedAt = 0;
-        String message = "";
-        String detailMessage = "Passed";
-        if (compileCodeResponse.isAllTestsPassed() && compileCodeResponse.getFailedAt()<=0){
-            submission.setStatus(SubmissionStatus.ACCEPTED);
-            message = MESSAGE.ACCEPTED_STATUS;
-            isAllTestPassed = true;
-        } else {
-            List<CompileCodeResponse> list = compileCodeResponse.getCompileCodeResponses();
-            for (int i = 0; i < list.size(); i++) {
-                if (list.get(i).isTimeLimit()||"time limit exceeded".equalsIgnoreCase(list.get(i).getMessage())) {
-                    submission.setStatus(SubmissionStatus.TIME_LIMIT_EXCEEDED);
-                    failedAt = i + 1;
-                    message = MESSAGE.TIME_LIMIT_EXCEEDED;
-                    detailMessage = list.get(i).getMessage();
-                    break;
-                }
-                if (this.isCompileError(list.get(i).getMessage())) {
-                    submission.setStatus(SubmissionStatus.COMPILE_ERROR);
-                    failedAt = i + 1;
-                    message = MESSAGE.COMPILE_ERROR;
-                    detailMessage = list.get(i).getMessage();
-                    break;
-                }
-                if (!list.get(i).isPassed()) {
-                    submission.setStatus(SubmissionStatus.WRONG_ANSWER);
-                    failedAt = i + 1;
-                    message = MESSAGE.WRONG_ANSWER;
-                    detailMessage = list.get(i).getMessage();
-                    break;
-                }
-            }
-        }
-        submission.setMessage(message);
-        submission.setFailedAt((long)failedAt);
-        submission.setTotalTest((long)totalTest);
-        SubmissionResponse response = SubmissionResponse.exchangeEntity(this.submissionRepository.save(submission));
+
+        ListCompileCodeResponse compileCodeResponse = compileCodeService.compileCode(compileCodeDTO);
+        String detailMessage = processCompileResults(submission, compileCodeResponse);
+
+        SubmissionResponse response = SubmissionResponse.exchangeEntity(submissionRepository.save(submission));
+
         if (submission.getStatus().equals(SubmissionStatus.ACCEPTED)) {
-            this.codeStorageService.createCodeStorage(this.parseDTO(
-                    submission, submissionDTO.getSourceCode()));
+            codeStorageService.createCodeStorage(parseDTO(submission, submissionDTO.getSourceCode()));
+            response.setSourceCode(compileCodeDTO.getSourceCode());
         }
-        response.setFailedAt((long)failedAt);
-        response.setMessage(message);
-        response.setLanguage(language);
-        response.setAllTestPassed(isAllTestPassed);
-        response.setTotalTest((long)totalTest);
-        response.setDetailMessage(detailMessage);
+
+        enrichResponse(response, submission, compileCodeResponse, detailMessage);
         return response;
+    }
+    private Submission notExistsInDataBase(SubmissionDTO submissionDTO){
+        Pair<Pair<User, Problem>, Pair<Language, Contest>> data = this.checkValidSubmission(submissionDTO);
+        Submission submission = new Submission();
+        submission.setContest(data.getSecond().getSecond());
+        submission.setUser(data.getFirst().getFirst());
+        submission.setLanguage(data.getSecond().getFirst());
+        submission.setProblem(data.getFirst().getSecond());
+        return submission;
     }
     @Override
     public List<SubmissionResponse> getSubmissionByUserId(Long userId) {
@@ -227,11 +183,24 @@ public class SubmissionService implements ISubmissionService {
 
     @Override
     public SubmissionResponse getSubmissionByUserIdAndProblemId(Long userId, Long problemId) {
-        Submission submission = this.getLatestSubmission(userId, problemId)
-                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
-        String sourceCode = this.getSourceCodeAC(submission);
-        SubmissionResponse response = SubmissionResponse.exchangeEntity(submission);
-        response.setSourceCode(sourceCode);
+        SecurityService.validateUserIdExcepAdmin(userId);
+        Object[] data = this.getLatestSubmission(userId, problemId).get(0);
+        SubmissionResponse response = SubmissionResponse
+                .builder()
+                .userId(userId)
+                .problem(this.getProblem(problemId))
+                .sourceCode((String)data[2])
+                .executionTime((Long)data[3])
+                .memoryUsed((Long)data[4])
+                .message((String)data[5])
+                .failedAt((Long)data[6])
+                .totalTest((Long)data[7])
+                .status(SubmissionStatus.valueOf((String)data[8]))
+                .languageName((String)data[9])
+                .compilerVersion((String)data[10])
+                .id((Long)data[11])
+                .contestId((Long)data[12])
+                .build();
         return response;
     }
 
@@ -269,24 +238,51 @@ public class SubmissionService implements ISubmissionService {
         return this.submissionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
-    public Pair<Pair<User, Problem>, Language> checkValidSubmission(SubmissionDTO submissionDTO){
-        User user = this.userRepository.findById(submissionDTO.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
-        if (!user.getIsActive()){
+    @Transactional(readOnly = true)
+    public Pair<Pair<User, Problem>, Pair<Language, Contest>> checkValidSubmission(SubmissionDTO submissionDTO) {
+        List<Object[]> results = submissionRepository.findSubmissionValidationData(
+                submissionDTO.getUserId(),
+                submissionDTO.getProblemId(),
+                submissionDTO.getContestId(),
+                submissionDTO.getCompilerVersion()
+        );
+
+        if (results.isEmpty()) {
             throw new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
         }
-        Problem problem = this.problemRepository.findById(submissionDTO.getProblemId())
-                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
-        if (!problem.getIsActive()){
+
+        Object[] data = results.get(0);
+        User user = (User) data[0];
+        Problem problem = (Problem) data[1];
+        Language language = (Language) data[2];
+        Contest contest = (Contest) data[3];
+
+        if (!user.getIsActive() || !problem.getIsActive() || !language.getIsActive()) {
             throw new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
         }
-        Language language = Optional.of(this.languageRepository.findByVersion(submissionDTO.getCompilerVersion()))
-                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
-        if (!language.getIsActive()){
-            throw new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
-        }
-        return Pair.of(Pair.of(user, problem), language);
+
+        return Pair.of(Pair.of(user, problem), Pair.of(language, contest));
     }
+//    public Pair<Pair<User, Problem>, Pair<Language,Contest>> checkValidSubmission(SubmissionDTO submissionDTO){
+//        User user = this.userRepository.findById(submissionDTO.getUserId())
+//                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
+//        if (!user.getIsActive()){
+//            throw new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
+//        }
+//        Problem problem = this.problemRepository.findById(submissionDTO.getProblemId())
+//                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
+//        if (!problem.getIsActive()){
+//            throw new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
+//        }
+//        Language language = Optional.of(this.languageRepository.findByVersion(submissionDTO.getCompilerVersion()))
+//                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
+//        if (!language.getIsActive()){
+//            throw new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
+//        }
+//        Contest contest = this.contestRepository.findById(submissionDTO.getContestId())
+//                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
+//        return Pair.of(Pair.of(user, problem), Pair.of(language, contest));
+//    }
     public Language getLanguage(Long id){
         return this.languageRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
@@ -339,13 +335,101 @@ public class SubmissionService implements ISubmissionService {
                         message.contains("error")
         );
     }
-    public Optional<Submission> getLatestSubmission(Long userId, Long problemId) {
+    public List<Object[]> getLatestSubmission(Long userId, Long problemId) {
         return submissionRepository
-                .findFirstByUser_IdAndProblem_IdOrderByCreatedAtDesc(userId, problemId);
+                .getDetailSubmissionByUserIdAndProblemId(userId, problemId, "ACCEPTED");
+    }
+    public Optional<Submission> getLatestSubmissionValue(Long userId, Long problemId) {
+        return Optional.ofNullable(submissionRepository
+                .findFirstByUser_IdAndProblem_IdOrderByCreatedAtDesc(userId, problemId)
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION)));
     }
     public Submission findOrThrow(Long userId, Long problemId) {
         return submissionRepository
                 .findFirstByUser_IdAndProblem_IdOrderByCreatedAtDesc(userId, problemId)
                 .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
+    }
+    private Submission prepareSubmission(SubmissionDTO submissionDTO, Optional<Submission> existingSubmission) {
+        Submission submission = mapper.toEntity(submissionDTO);
+        if (existingSubmission.isPresent()) {
+            Submission existing = existingSubmission.get();
+            submission.setId(existing.getId());
+            submission.setCreatedAt(existing.getCreatedAt());
+            submission.setLanguage(this.getLanguageByCompilerVersion(submissionDTO.getCompilerVersion()));
+            submission.setUser(existing.getUser());
+            submission.setProblem(existing.getProblem());
+            submission.setContest(existing.getContest());
+        } else {
+            Submission newSubmission = notExistsInDataBase(submissionDTO);
+            submission.setProblem(newSubmission.getProblem());
+            submission.setLanguage(newSubmission.getLanguage());
+            submission.setUser(newSubmission.getUser());
+            submission.setContest(newSubmission.getContest());
+        }
+        return submission;
+    }
+
+    private CompileCodeDTO buildCompileCodeDTO(SubmissionDTO submissionDTO, Submission submission) {
+        return CompileCodeDTO.builder()
+                .compilerVersion(CompilerVersion.valueOf(submission.getLanguage().getVersion()))
+                .language(com.example.zero2dev.storage.Language.valueOf(submission.getLanguage().getName()))
+                .timeLimit(submission.getProblem().getTimeLimit())
+                .sourceCode(submissionDTO.getSourceCode())
+                .testCases(this.testCaseReaderService.getTestCases(
+                        submissionDTO.getProblemId()
+                        ,submission.getProblem().getTestCases()))
+                .build();
+    }
+
+    private String processCompileResults(Submission submission, ListCompileCodeResponse compileCodeResponse) {
+        submission.setMemoryUsed(compileCodeResponse.getTotalMemoryUsed());
+        submission.setExecutionTime(compileCodeResponse.getTotalExecutionTime());
+        int failedAt = 0;
+        String message = "";
+        String detailMessage = "Passed";
+
+        if (compileCodeResponse.isAllTestsPassed() && compileCodeResponse.getFailedAt() <= 0) {
+            submission.setStatus(SubmissionStatus.ACCEPTED);
+            message = MESSAGE.ACCEPTED_STATUS;
+        } else {
+            for (int i = 0; i < compileCodeResponse.getCompileCodeResponses().size(); i++) {
+                CompileCodeResponse result = compileCodeResponse.getCompileCodeResponses().get(i);
+                if (result.isTimeLimit() || "time limit exceeded".equalsIgnoreCase(result.getMessage())) {
+                    submission.setStatus(SubmissionStatus.TIME_LIMIT_EXCEEDED);
+                    failedAt = i + 1;
+                    message = MESSAGE.TIME_LIMIT_EXCEEDED;
+                    detailMessage = result.getMessage();
+                    break;
+                }
+                if (isCompileError(result.getMessage())) {
+                    submission.setStatus(SubmissionStatus.COMPILE_ERROR);
+                    failedAt = i + 1;
+                    message = MESSAGE.COMPILE_ERROR;
+                    detailMessage = result.getMessage();
+                    break;
+                }
+                if (!result.isPassed()) {
+                    submission.setStatus(SubmissionStatus.WRONG_ANSWER);
+                    failedAt = i + 1;
+                    message = MESSAGE.WRONG_ANSWER;
+                    detailMessage = result.getMessage();
+                    break;
+                }
+            }
+        }
+        submission.setMessage(message);
+        submission.setFailedAt((long) failedAt);
+        submission.setTotalTest((long) compileCodeResponse.getTotalTests());
+        return detailMessage;
+    }
+
+    private void enrichResponse(SubmissionResponse response, Submission submission, ListCompileCodeResponse compileCodeResponse, String detailMessage) {
+        response.setFailedAt(submission.getFailedAt());
+        response.setMessage(submission.getMessage());
+        response.setLanguageName(submission.getLanguage().getName());
+        response.setCompilerVersion(submission.getLanguage().getVersion());
+        response.setAllTestPassed(compileCodeResponse.isAllTestsPassed());
+        response.setTotalTest(submission.getTotalTest());
+        response.setDetailMessage(detailMessage);
     }
 }

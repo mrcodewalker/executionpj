@@ -19,4 +19,10 @@ public class MESSAGE {
     public static final String COMPILE_ERROR = "Indentation error found. Ensure proper code indentation.";
     public static final String CONTEST_EXPIRED_TIME = "The contest has been closed, please try by another contest time!.";
     public static final String EXISTED_RECORD_ERROR = "A record value has been existed in database, please try again!.";
+    public static final String INPUT_FILE_NOT_FOUND = "Can not find test case right now, please try again!";
+    public static final String EXISTED_EMAIL = "An email has been existed!";
+    public static final String EXISTED_USERNAME = "An username has been existed!";
+    public static final String EXISTED_PHONE_NUMBER = "A phone number has been existed!";
+    public static final String INPUT_SIZE_ERROR = "An input size error, you have to try again!";
+    public static final String FORBIDDEN_REQUEST = "You do not have right role to access!";
 }

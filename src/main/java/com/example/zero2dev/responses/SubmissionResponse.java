@@ -16,7 +16,6 @@ public class SubmissionResponse {
     private Long userId;
     private Long contestId;
     private Problem problem;
-    private Language language;
     private SubmissionStatus status;
     private Long failedAt;
     private String message;
@@ -25,6 +24,8 @@ public class SubmissionResponse {
     private Long totalTest;
     private String sourceCode;
     private String detailMessage;
+    private String compilerVersion;
+    private String languageName;
     private boolean allTestPassed;
     public static SubmissionResponse exchangeEntity(Submission submission){
         return SubmissionResponse.builder()
@@ -35,7 +36,8 @@ public class SubmissionResponse {
                 .totalTest(submission.getTotalTest())
                 .failedAt(submission.getFailedAt())
                 .contestId(submission.getContest().getId())
-                .language(submission.getLanguage())
+                .languageName(submission.getLanguage().getName())
+                .compilerVersion(submission.getLanguage().getVersion())
                 .memoryUsed(submission.getMemoryUsed())
                 .status(submission.getStatus())
                 .problem(submission.getProblem())

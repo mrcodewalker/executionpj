@@ -30,8 +30,8 @@ public class SubmissionController {
     @GetMapping("/filter/submit")
     public ResponseEntity<?> filterSubmission(
             @RequestParam("userId") Long userId,
-            @RequestParam("problemId") Long probemId){
-        return ResponseEntity.ok(this.submissionService.getSubmissionByUserIdAndProblemId(userId, probemId));
+            @RequestParam("problemId") Long problemId){
+        return ResponseEntity.ok(this.submissionService.getSubmissionByUserIdAndProblemId(userId, problemId));
     }
     @GetMapping("/collect/problem/{id}")
     public ResponseEntity<?> collectSubmissionByProblemId(

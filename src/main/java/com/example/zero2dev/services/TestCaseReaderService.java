@@ -16,13 +16,13 @@ import com.example.zero2dev.storage.MESSAGE;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +30,7 @@ public class TestCaseReaderService implements ITestCaseReaderService {
     private final TestCaseReaderRepository testCaseReaderRepository;
     private final TestCaseReaderMapper mapper;
     private final ProblemService problemService;
+    private final Map<Long, List<TestCase>> cacheTestCase = new HashMap<>();
     @Override
     public TestCaseReaderResponse createTestCase(TestCaseReaderDTO testCaseReaderDTO) {
         Problem problem = this.problemService.findProblemById(testCaseReaderDTO.getProblemId());
@@ -90,9 +91,10 @@ public class TestCaseReaderService implements ITestCaseReaderService {
         }
         return testCaseReader;
     }
-    public List<TestCase> getTestCases(Long problemId) {
-        Problem problem = this.problemService.findProblemById(problemId);
-        List<TestCaseReader> testCases = this.testCaseReaderRepository.getByProblemId(problemId);
+    public List<TestCase> getTestCases(Long problemId, List<TestCaseReader> testCases) {
+        if (this.cacheTestCase.containsKey(problemId)){
+            return this.cacheTestCase.get(problemId);
+        }
         List<TestCase> processedTestCases = new ArrayList<>();
         for (TestCaseReader items : testCases){
             try {
@@ -107,13 +109,16 @@ public class TestCaseReaderService implements ITestCaseReaderService {
                 throw new RuntimeException(MESSAGE.GENERAL_ERROR, e);
             }
         }
+        this.cacheTestCase.put(problemId, processedTestCases);
         return processedTestCases;
     }
     private String readFileContent(String filePath) throws IOException {
         Path path = Paths.get(filePath);
         if (!Files.exists(path)) {
-            throw new ResourceNotFoundException(MESSAGE.GENERAL_ERROR);
+            throw new ResourceNotFoundException(MESSAGE.INPUT_FILE_NOT_FOUND);
         }
-        return Files.readString(path);
+        try (BufferedReader reader = Files.newBufferedReader(path)) {
+            return reader.lines().collect(Collectors.joining("\n"));
+        }
     }
 }

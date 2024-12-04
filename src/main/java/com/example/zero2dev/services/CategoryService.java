@@ -12,6 +12,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -20,12 +24,12 @@ public class CategoryService implements ICategoryService {
     private final CategoryMapper mapper;
     @Override
     public CategoryResponse createCategory(CategoryDTO categoryDTO) {
-        return mapper.toResponse(this.categoryRepository.save(mapper.toEntity(categoryDTO)));
+        return CategoryResponse.toResponse(this.categoryRepository.save(mapper.toEntity(categoryDTO)));
     }
     @Override
     public CategoryResponse updateCategory(Long id, CategoryDTO categoryDTO) {
         Category cloneCategory = mapper.parseEntity(this.findCategoryById(id), categoryDTO);
-        return mapper.toResponse(this.categoryRepository.save(cloneCategory));
+        return CategoryResponse.toResponse(this.categoryRepository.save(cloneCategory));
     }
 
     @Override
@@ -36,8 +40,19 @@ public class CategoryService implements ICategoryService {
 
     @Override
     public CategoryResponse getCategoryById(Long id) {
-        return mapper.toResponse(this.findCategoryById(id));
+        return CategoryResponse.toResponse(this.findCategoryById(id));
     }
+
+    @Override
+    public List<CategoryResponse> getListCategory() {
+        return Optional.of(this.categoryRepository.findAll())
+                .filter(items -> !items.isEmpty())
+                .map(items -> items.stream()
+                        .map(CategoryResponse::toResponse)
+                        .collect(Collectors.toList()))
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
+    }
+
     public Category findCategoryById(Long id){
         return this.categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));

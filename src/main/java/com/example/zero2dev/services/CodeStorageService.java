@@ -36,6 +36,7 @@ public class CodeStorageService implements ICodeStorageService {
     private final UserRepository userRepository;
     private final SubmissionRepository submissionRepository;
     private final ProblemRepository problemRepository;
+    private final SecurityService securityService;
     @Override
     @Transactional
     public CodeStorageResponse createCodeStorage(CodeStorageDTO codeStorageDTO) {
@@ -68,6 +69,10 @@ public class CodeStorageService implements ICodeStorageService {
 
     @Override
     public List<CodeStorageResponse> getCodeStorageByUser(Long userid) {
+        if (securityService.getUserIdFromSecurityContext()==null
+        || !securityService.getUserIdFromSecurityContext().equals(userid+"")){
+            throw new ResourceNotFoundException(MESSAGE.GENERAL_ERROR);
+        }
         return Optional.ofNullable(this.codeStorageRepository.findByUserId(userid))
                 .filter(items -> !items.isEmpty())
                 .map(items -> items.stream()

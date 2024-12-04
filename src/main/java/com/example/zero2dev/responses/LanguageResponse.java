@@ -18,6 +18,8 @@ import java.util.Arrays;
 @Builder
 @AllArgsConstructor
 public class LanguageResponse {
+    @JsonProperty("id")
+    private Long id;
     @JsonProperty("name")
     private String name;
     @JsonProperty("version")

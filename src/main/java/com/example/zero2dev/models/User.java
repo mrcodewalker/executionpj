@@ -4,9 +4,14 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 @Entity
@@ -17,7 +22,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class User {
+public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -44,6 +49,9 @@ public class User {
 
     @Column(name = "is_active", columnDefinition = "BOOLEAN DEFAULT TRUE")
     private Boolean isActive = true;
+    @ManyToOne
+    @JoinColumn(name = "role_id")
+    private Role role;
 
     @OneToMany(mappedBy = "user")
     @JsonManagedReference
@@ -56,4 +64,11 @@ public class User {
     @OneToMany(mappedBy = "user")
     @JsonManagedReference
     private List<ContestRanking> contestRankings;
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        List<SimpleGrantedAuthority> authorityList = new ArrayList<>();
+        authorityList.add(new SimpleGrantedAuthority("ROLE_"+getRole().getRoleName().toUpperCase()));
+        return authorityList;
+    }
 }

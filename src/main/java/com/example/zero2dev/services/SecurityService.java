@@ -22,7 +22,7 @@ public class SecurityService {
     }
     public static boolean checkValidUserId(Long userId){
         User user = getUserIdFromSecurityContext();
-        if (user==null){
+        if (user==null||userId<=0){
             return false;
         }
         if (user.getRole().getRoleName().equals(Role.ADMIN)
@@ -34,9 +34,9 @@ public class SecurityService {
         }
         return user.getIsActive();
     }
-    public static void validateUserIdExcepAdmin(Long userId){
+    public static void validateUserIdExceptAdmin(Long userId){
         if (!checkValidUserId(userId)){
-            throw new ResourceNotFoundException(MESSAGE.GENERAL_ERROR);
+            throw new ResourceNotFoundException(MESSAGE.FORBIDDEN_REQUEST);
         }
     }
 }

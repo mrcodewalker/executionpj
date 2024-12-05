@@ -30,6 +30,7 @@ public class ContestParticipantService implements IContestParticipantService {
     private final SubmissionRepository submissionRepository;
     @Override
     public ContestParticipantResponse joinContest(ContestParticipantDTO contestParticipantDTO) {
+        SecurityService.validateUserIdExceptAdmin(contestParticipantDTO.getUserId());
         return Optional.of(contestParticipantDTO)
                 .map(this::validateContestParticipation)
                 .map(this::exchangeKey)
@@ -49,6 +50,7 @@ public class ContestParticipantService implements IContestParticipantService {
     }
     @Override
     public List<ContestParticipantResponse> getListContestUserJoined(Long userId) {
+        SecurityService.validateUserIdExceptAdmin(userId);
         return Optional.ofNullable(this.contestParticipantRepository.findByIdUserId(userId))
                 .filter(items -> !items.isEmpty())
                 .map(items -> items.stream()
@@ -67,6 +69,7 @@ public class ContestParticipantService implements IContestParticipantService {
     }
     @Override
     public ContestParticipantResponse updateTotalScore(ContestParticipantKey contestParticipantKey, Long problemId) {
+        SecurityService.validateUserIdExceptAdmin(contestParticipantKey.getUserId());
         ContestParticipant existingRecord = this.getRecordByKey(contestParticipantKey);
         Problem problem = this.getProblem(problemId);
         this.validateProblem(problem);
@@ -75,6 +78,7 @@ public class ContestParticipantService implements IContestParticipantService {
 
     @Override
     public boolean isUserJoinedContest(Long contestId, Long userId) {
+        SecurityService.validateUserIdExceptAdmin(userId);
         return this.contestParticipantRepository.findById(this.mappingKey(contestId,userId)).isPresent();
     }
 

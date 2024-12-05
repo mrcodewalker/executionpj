@@ -23,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -53,6 +54,7 @@ public class CodeStorageService implements ICodeStorageService {
 
     @Override
     public List<CodeStorageResponse> getCodeStorageBySize(int size, CodeStorageDTO codeStorageDTO) {
+        SecurityService.validateUserIdExceptAdmin(codeStorageDTO.getUserId());
         Pageable limit = PageRequest.of(0, size);
         List<CodeStorage> codeStorages = codeStorageRepository.findByUserAndProblemWithLimit(
                 codeStorageDTO.getUserId(),
@@ -69,10 +71,7 @@ public class CodeStorageService implements ICodeStorageService {
 
     @Override
     public List<CodeStorageResponse> getCodeStorageByUser(Long userid) {
-        if (securityService.getUserIdFromSecurityContext()==null
-        || !securityService.getUserIdFromSecurityContext().equals(userid+"")){
-            throw new ResourceNotFoundException(MESSAGE.GENERAL_ERROR);
-        }
+        SecurityService.validateUserIdExceptAdmin(userid);
         return Optional.ofNullable(this.codeStorageRepository.findByUserId(userid))
                 .filter(items -> !items.isEmpty())
                 .map(items -> items.stream()
@@ -88,6 +87,7 @@ public class CodeStorageService implements ICodeStorageService {
 
     @Override
     public CodeStorageResponse getByInfo(CodeStorageDTO codeStorageDTO) {
+        SecurityService.validateUserIdExceptAdmin(codeStorageDTO.getUserId());
         return CodeStorageResponse.fromData(this.findExistRecord(codeStorageDTO));
     }
 

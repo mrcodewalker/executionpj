@@ -13,9 +13,12 @@ import com.example.zero2dev.models.User;
 import com.example.zero2dev.repositories.ProblemRepository;
 import com.example.zero2dev.repositories.SubmissionRepository;
 import com.example.zero2dev.repositories.UserRepository;
+import com.example.zero2dev.responses.AuthenticationResponse;
 import com.example.zero2dev.responses.UserResponse;
+import com.example.zero2dev.storage.LoginStatus;
 import com.example.zero2dev.storage.MESSAGE;
 import com.example.zero2dev.storage.SubmissionStatus;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.sql.Update;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -40,6 +43,9 @@ public class UserService implements IUserService {
     private final SubmissionRepository submissionRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final RoleService roleService;
+    private final AuthenticationService authenticationService;
+    private final LoginAttemptService loginAttemptService;
+    private final IPSecurityService ipSecurityService;
     @Override
     public UserResponse createUser(UserDTO userDTO) {
         this.validAccount(userDTO);
@@ -84,7 +90,7 @@ public class UserService implements IUserService {
 
     @Override
     public UserResponse getUserById(Long id) {
-        SecurityService.validateUserIdExcepAdmin(id);
+        SecurityService.validateUserIdExceptAdmin(id);
         return mapper.toResponse(this.collectUser(id));
     }
 
@@ -153,9 +159,15 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public UserResponse login(LoginDTO loginDTO) {
+    public UserResponse login(LoginDTO loginDTO, HttpServletRequest request) {
+        loginDTO.setIpAddress(IpService.getClientIp(request));
+        if (loginAttemptService.isAccountLocked(loginDTO.getUsername(), loginDTO.getIpAddress())){
+            this.ipSecurityService.createIPBlackList(loginDTO.getIpAddress());
+            throw new ValueNotValidException(MESSAGE.LOCKED_ACCOUNT);
+        }
         User user = this.collectUserByUserName(loginDTO.getUsername());
         if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())){
+            this.loginAttemptService.recordLoginAttempt(loginDTO, LoginStatus.FAILED);
             throw new ValueNotValidException(MESSAGE.INPUT_NOT_MATCH_EXCEPTION);
         }
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
@@ -165,10 +177,12 @@ public class UserService implements IUserService {
         try {
             authenticationManager.authenticate(authenticationToken);
         } catch (Exception e) {
+            this.loginAttemptService.recordLoginAttempt(loginDTO, LoginStatus.FAILED);
             throw new ValueNotValidException(e.getMessage());
         }
         UserResponse response = this.mapper.toResponse(user);
-        response.setToken(this.jwtTokenProvider.generateToken(user));
+        response.setAuthenticationResponse(authenticationService.login(user));
+        this.loginAttemptService.recordLoginAttempt(loginDTO, LoginStatus.SUCCESS);
         return response;
     }
 
@@ -186,7 +200,7 @@ public class UserService implements IUserService {
     }
     private User collectUserByUserName(String username){
         return this.userRepository.getUserByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.GENERAL_ERROR));
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.LOCKED_ACCOUNT));
     }
     private User collectUserByEmail(String email){
         return this.userRepository.getUserByEmail(email)
@@ -224,6 +238,7 @@ public class UserService implements IUserService {
 
     }
     private User exchangeEntity(UpdateUserDTO updateUserDTO){
+        SecurityService.validateUserIdExceptAdmin(updateUserDTO.getId());
         User existingUser = this.getUserExisting(updateUserDTO.getId(), updateUserDTO.getUsername());
         if (updateUserDTO.getFullName()!=null){
             existingUser.setFullName(updateUserDTO.getFullName());

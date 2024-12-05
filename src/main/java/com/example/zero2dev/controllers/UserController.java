@@ -4,6 +4,7 @@ import com.example.zero2dev.dtos.LoginDTO;
 import com.example.zero2dev.dtos.UpdateUserDTO;
 import com.example.zero2dev.dtos.UserDTO;
 import com.example.zero2dev.services.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,8 +24,9 @@ public class UserController {
     }
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(
-            @RequestBody LoginDTO loginDTO){
-        return ResponseEntity.ok(this.userService.login(loginDTO));
+            @RequestBody LoginDTO loginDTO,
+            HttpServletRequest request){
+        return ResponseEntity.ok(this.userService.login(loginDTO, request));
     }
     @PostMapping("/update/info")
     public ResponseEntity<?> updateUserInfo(

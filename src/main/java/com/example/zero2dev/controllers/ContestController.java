@@ -28,7 +28,7 @@ public class ContestController {
     @PostMapping("/delete")
     public ResponseEntity<?> deleteContestById(
             @RequestParam("id") Long id){
-        return ResponseEntity.ok(this.deleteContestById(id));
+        return ResponseEntity.ok(this.contestService.deleteContestById(id));
     }
     @PostMapping("/update/contest")
     public ResponseEntity<?> updateContest(

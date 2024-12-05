@@ -17,3 +17,11 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
+zero2dev:
+  time_back_track: 1
+  max_failed_login: 5
+  access_token_expired_after: 30
+  refresh_token_expired_after: 7
+  unban_after_hour: 1
+  username: "admin"
+  timeout: 5000

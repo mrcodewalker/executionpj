@@ -24,5 +24,11 @@ public class MESSAGE {
     public static final String EXISTED_USERNAME = "An username has been existed!";
     public static final String EXISTED_PHONE_NUMBER = "A phone number has been existed!";
     public static final String INPUT_SIZE_ERROR = "An input size error, you have to try again!";
-    public static final String FORBIDDEN_REQUEST = "You do not have right role to access!";
+    public static final String FORBIDDEN_REQUEST = "You do not have right role to access this resource!";
+    public static final String ACCESS_DENIED = "Access denied! You do not have the required permissions.";
+    public static final String INSUFFICIENT_PRIVILEGES = "You do not have sufficient privileges to perform this action.";
+    public static final String ROLE_NOT_VALID = "The role assigned to your account is not valid for this operation.";
+    public static final String REFRESH_TOKEN_EXPIRED = "The token has been expired, please try to login again!";
+    public static final String TOKEN_HAS_BEEN_REVOKED = "The token has been revoked, please try again!";
+    public static final String LOCKED_ACCOUNT = "Your account has been locked because tries to login, please wait for 1 hour!";
 }

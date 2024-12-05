@@ -1,5 +1,6 @@
 package com.example.zero2dev.responses;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 @Data
@@ -14,5 +15,6 @@ public class UserResponse {
     private String email;
     private String fullName;
     private String avatarUrl;
-    private String token;
+    @JsonProperty("token")
+    private AuthenticationResponse authenticationResponse;
 }

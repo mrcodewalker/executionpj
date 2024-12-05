@@ -2,6 +2,9 @@ package com.example.zero2dev.filter;
 
 import com.example.zero2dev.exceptions.ResourceNotFoundException;
 import com.example.zero2dev.models.User;
+import com.example.zero2dev.services.IPSecurityService;
+import com.example.zero2dev.services.TokenService;
+import com.example.zero2dev.storage.TokenType;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,23 +13,28 @@ import lombok.NonNull;
 import org.springframework.data.util.Pair;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 @Component
 public class JwtTokenFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsService userDetailsService;
-    public JwtTokenFilter(JwtTokenProvider jwtTokenProvider, UserDetailsService userDetailsService) {
+    private final TokenService tokenService;
+    private final IPSecurityService ipSecurityService;
+    public JwtTokenFilter(JwtTokenProvider jwtTokenProvider,
+                          UserDetailsService userDetailsService,
+                          TokenService tokenService,
+                          IPSecurityService ipSecurityService) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.userDetailsService = userDetailsService;
+        this.tokenService = tokenService;
+        this.ipSecurityService = ipSecurityService;
     }
 
     @Override
@@ -44,7 +52,15 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
                 return;
             }
+            if (ipSecurityService.isIPBlacklisted(getClientIP(request))) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "IP blocked due to suspicious activity");
+                return;
+            }
             final String token = authHeader.substring(7);
+            if (!this.tokenService.validateToken(token, TokenType.ACCESS)){
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid access token");
+                return;
+            }
             final String username = jwtTokenProvider.extractUserName(token);
             if (username != null
                     && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -80,5 +96,12 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             }
         }
         return false;
+    }
+    private String getClientIP(HttpServletRequest request) {
+        String ipAddress = request.getHeader("X-Forwarded-For");
+        if (ipAddress == null || ipAddress.isEmpty()) {
+            ipAddress = request.getRemoteAddr();
+        }
+        return ipAddress;
     }
 }

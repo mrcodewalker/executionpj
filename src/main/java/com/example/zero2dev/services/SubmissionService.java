@@ -45,6 +45,7 @@ public class SubmissionService implements ISubmissionService {
     private final ContestParticipantService contestParticipantService;
     @Override
     public SubmissionResponse createSubmission(SubmissionDTO submissionDTO) {
+        SecurityService.validateUserIdExceptAdmin(submissionDTO.getUserId());
         if (!contestParticipantService.joinedContest(submissionDTO.getContestId(), submissionDTO.getUserId())) {
             throw new ValueNotValidException(MESSAGE.GENERAL_ERROR);
         }
@@ -81,6 +82,7 @@ public class SubmissionService implements ISubmissionService {
     }
     @Override
     public List<SubmissionResponse> getSubmissionByUserId(Long userId) {
+        SecurityService.validateUserIdExceptAdmin(userId);
         return Optional.ofNullable(this.submissionRepository.findByUserId(userId))
                 .filter(items -> !items.isEmpty())
                 .map(items -> items.stream()
@@ -151,6 +153,7 @@ public class SubmissionService implements ISubmissionService {
 
     @Override
     public List<SubmissionResponse> deleteSubmissionByUserId(Long userId) {
+        SecurityService.validateUserIdExceptAdmin(userId);
         return Optional.ofNullable(this.submissionRepository.findByUserId(userId))
                 .filter(submissions -> !submissions.isEmpty())
                 .map(submissions -> {
@@ -183,7 +186,7 @@ public class SubmissionService implements ISubmissionService {
 
     @Override
     public SubmissionResponse getSubmissionByUserIdAndProblemId(Long userId, Long problemId) {
-        SecurityService.validateUserIdExcepAdmin(userId);
+        SecurityService.validateUserIdExceptAdmin(userId);
         Object[] data = this.getLatestSubmission(userId, problemId).get(0);
         SubmissionResponse response = SubmissionResponse
                 .builder()

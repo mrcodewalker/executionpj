@@ -7,6 +7,7 @@ import com.example.zero2dev.models.BlacklistedToken;
 import com.example.zero2dev.models.User;
 import com.example.zero2dev.repositories.BlacklistedIPRepository;
 import com.example.zero2dev.repositories.BlacklistedTokenRepository;
+import com.example.zero2dev.storage.BlacklistStatus;
 import com.example.zero2dev.storage.MESSAGE;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

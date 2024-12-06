@@ -164,7 +164,7 @@ public class UserService implements IUserService {
         loginDTO.setIpAddress(IpService.getClientIp(request));
         if (loginAttemptService.isAccountLocked(loginDTO.getUsername(), loginDTO.getIpAddress())) {
             this.ipSecurityService.createIPBlackList(request);
-            throw new ValueNotValidException(MESSAGE.LOCKED_ACCOUNT);
+            throw new ValueNotValidException(MESSAGE.IP_BLACKLISTED);
         }
         User user = this.collectUserByUserName(loginDTO.getUsername());
         if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())){

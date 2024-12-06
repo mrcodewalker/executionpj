@@ -1,15 +1,20 @@
 package com.example.zero2dev.services;
 
 import com.example.zero2dev.exceptions.ResourceNotFoundException;
+import com.example.zero2dev.filter.JwtTokenProvider;
 import com.example.zero2dev.models.Role;
 import com.example.zero2dev.models.User;
 import com.example.zero2dev.storage.MESSAGE;
+import io.jsonwebtoken.Jwt;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class SecurityService {
+    private final JwtTokenProvider jwtTokenProvider;
 
     public static User getUserIdFromSecurityContext() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -38,5 +43,8 @@ public class SecurityService {
         if (!checkValidUserId(userId)){
             throw new ResourceNotFoundException(MESSAGE.FORBIDDEN_REQUEST);
         }
+    }
+    public final String getSessionId(){
+        return this.jwtTokenProvider.getSessionIdFromToken();
     }
 }

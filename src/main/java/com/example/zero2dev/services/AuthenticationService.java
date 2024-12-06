@@ -1,14 +1,12 @@
 package com.example.zero2dev.services;
 
 import com.example.zero2dev.dtos.BlacklistedTokenDTO;
+import com.example.zero2dev.dtos.UserSessionDTO;
 import com.example.zero2dev.exceptions.ResourceNotFoundException;
 import com.example.zero2dev.exceptions.ValueNotValidException;
 import com.example.zero2dev.filter.JwtTokenProvider;
 import com.example.zero2dev.interfaces.IAuthenticationService;
-import com.example.zero2dev.models.BlacklistedToken;
-import com.example.zero2dev.models.RefreshToken;
-import com.example.zero2dev.models.Token;
-import com.example.zero2dev.models.User;
+import com.example.zero2dev.models.*;
 import com.example.zero2dev.repositories.RefreshTokenRepository;
 import com.example.zero2dev.responses.AuthenticationResponse;
 import com.example.zero2dev.responses.RefreshTokenResponse;
@@ -36,12 +34,14 @@ public class AuthenticationService implements IAuthenticationService {
     private final JwtTokenProvider jwtService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final BlacklistedTokenService blacklistedTokenService;
+    private final UserSessionService userSessionService;
+    private final SecurityService securityService;
     @Override
-    public AuthenticationResponse login(User user) {
+    public AuthenticationResponse login(UserSession userSession, User user) {
         if (user==null){
             throw new ResourceNotFoundException(MESSAGE.FORBIDDEN_REQUEST);
         }
-        String jwtToken = jwtService.generateToken(user);
+        String jwtToken = jwtService.generateToken(userSession, user);
         Token accessToken = tokenService.createAccessToken(user, jwtToken);
         RefreshToken refreshToken = tokenService.createRefreshToken(user);
 
@@ -53,7 +53,7 @@ public class AuthenticationService implements IAuthenticationService {
                 .build();
     }
     @Override
-    public AuthenticationResponse refreshToken(String refreshToken) {
+    public AuthenticationResponse refreshToken(String refreshToken, HttpServletRequest request) {
         User user = SecurityService.getUserIdFromSecurityContext();
         if (user == null){
             throw new ValueNotValidException(MESSAGE.FORBIDDEN_REQUEST);
@@ -67,7 +67,18 @@ public class AuthenticationService implements IAuthenticationService {
         if (token.getExpiredAt().isBefore(LocalDateTime.now())) {
             throw new ValueNotValidException(MESSAGE.REFRESH_TOKEN_EXPIRED);
         }
-        String newAccessToken = jwtService.generateToken(user);
+        if (!userSessionService.isValidSession(securityService.getSessionId())){
+            throw new ValueNotValidException(MESSAGE.KEY_EXPIRED);
+        }
+        UserSessionDTO userSessionDTO = UserSessionDTO.builder()
+                .isActive(true)
+                .userId(user.getId())
+                .sessionId(userSessionService.generateSecureSessionId(user.getId()))
+                .ipAddress(IpService.getClientIp(request))
+                .deviceInfo(IpService.generateDeviceInfoString(request))
+                .build();
+        UserSession session = userSessionService.createSession(userSessionDTO, user);
+        String newAccessToken = jwtService.generateToken(session, user);
         Token newToken = tokenService.createAccessToken(user, newAccessToken);
 
         return AuthenticationResponse.builder()
@@ -82,6 +93,8 @@ public class AuthenticationService implements IAuthenticationService {
         if (user==null){
             throw new ValueNotValidException(MESSAGE.GENERAL_ERROR);
         }
+        String sessionId = securityService.getSessionId();
+        this.userSessionService.invalidateSession(sessionId);
         Optional<RefreshToken> refreshTokenOptional = refreshTokenRepository.findByUser(user);
         BlacklistedTokenDTO blacklistedTokenDTO = BlacklistedTokenDTO.builder()
                 .ipAddress(IpService.getClientIp(request))

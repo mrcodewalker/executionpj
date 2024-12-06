@@ -18,8 +18,9 @@ public class AuthenticationController {
     private final AuthenticationService authenticationService;
     @PostMapping("/refresh_token")
     public ResponseEntity<?> refreshToken(
-            @RequestBody RefreshTokenDTO refreshTokenDTO){
-        return ResponseEntity.ok(this.authenticationService.refreshToken(refreshTokenDTO.getRefreshToken()));
+            @RequestBody RefreshTokenDTO refreshTokenDTO,
+            HttpServletRequest request){
+        return ResponseEntity.ok(this.authenticationService.refreshToken(refreshTokenDTO.getRefreshToken(), request));
     }
     @PostMapping("/logout")
     public ResponseEntity<?> logoutUser(HttpServletRequest request){

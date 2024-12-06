@@ -3,6 +3,7 @@ package com.example.zero2dev.services;
 import com.example.zero2dev.dtos.LoginDTO;
 import com.example.zero2dev.dtos.UpdateUserDTO;
 import com.example.zero2dev.dtos.UserDTO;
+import com.example.zero2dev.dtos.UserSessionDTO;
 import com.example.zero2dev.exceptions.ResourceNotFoundException;
 import com.example.zero2dev.exceptions.ValueNotValidException;
 import com.example.zero2dev.filter.JwtTokenProvider;
@@ -11,6 +12,7 @@ import com.example.zero2dev.mapper.UserMapper;
 import com.example.zero2dev.models.BlacklistedIP;
 import com.example.zero2dev.models.Role;
 import com.example.zero2dev.models.User;
+import com.example.zero2dev.models.UserSession;
 import com.example.zero2dev.repositories.ProblemRepository;
 import com.example.zero2dev.repositories.SubmissionRepository;
 import com.example.zero2dev.repositories.UserRepository;
@@ -47,6 +49,7 @@ public class UserService implements IUserService {
     private final AuthenticationService authenticationService;
     private final LoginAttemptService loginAttemptService;
     private final IPSecurityService ipSecurityService;
+    private final UserSessionService userSessionService;
     @Override
     public UserResponse createUser(UserDTO userDTO) {
         this.validAccount(userDTO);
@@ -181,8 +184,16 @@ public class UserService implements IUserService {
             this.loginAttemptService.recordLoginAttempt(loginDTO, LoginStatus.FAILED, request);
             throw new ValueNotValidException(e.getMessage());
         }
+        String userAgent = request.getHeader("User-Agent");
+        UserSessionDTO userSessionDTO = UserSessionDTO.builder()
+                .userId(user.getId())
+                .deviceInfo(IpService.generateDeviceInfoString(request))
+                .ipAddress(loginDTO.getIpAddress())
+                .isActive(true)
+                .build();
+        UserSession session = userSessionService.createSession(userSessionDTO, user);
         UserResponse response = this.mapper.toResponse(user);
-        response.setAuthenticationResponse(authenticationService.login(user));
+        response.setAuthenticationResponse(authenticationService.login(session, user));
         this.loginAttemptService.recordLoginAttempt(loginDTO, LoginStatus.SUCCESS, request);
         return response;
     }

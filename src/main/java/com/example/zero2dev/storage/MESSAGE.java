@@ -29,6 +29,7 @@ public class MESSAGE {
     public static final String INSUFFICIENT_PRIVILEGES = "You do not have sufficient privileges to perform this action.";
     public static final String ROLE_NOT_VALID = "The role assigned to your account is not valid for this operation.";
     public static final String REFRESH_TOKEN_EXPIRED = "The token has been expired, please try to login again!";
+    public static final String KEY_EXPIRED = "The key has been expired, please try to login again!";
     public static final String TOKEN_HAS_BEEN_REVOKED = "The token has been revoked, please try again!";
     public static final String LOCKED_ACCOUNT = "Your account has been locked because tries to login, please wait for 1 hour!";
     public static final String IP_BLACKLISTED = "Your IP address has been blacklisted due to suspicious activity. Access is forbidden.";

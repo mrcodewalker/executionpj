@@ -31,4 +31,10 @@ public class MESSAGE {
     public static final String REFRESH_TOKEN_EXPIRED = "The token has been expired, please try to login again!";
     public static final String TOKEN_HAS_BEEN_REVOKED = "The token has been revoked, please try again!";
     public static final String LOCKED_ACCOUNT = "Your account has been locked because tries to login, please wait for 1 hour!";
+    public static final String IP_BLACKLISTED = "Your IP address has been blacklisted due to suspicious activity. Access is forbidden.";
+    public static final String IP_BLOCKED_FOR_SECURITY = "Your IP address has been temporarily blocked due to multiple failed login attempts. Please try again later.";
+    public static final String TOKEN_BLACKLISTED = "The provided token has been blacklisted. Please log in again.";
+    public static final String TOKEN_EXPIRED = "The token has expired. Please log in again to obtain a new one.";
+    public static final String TOKEN_INVALID = "The token is invalid. Please check your credentials and try again.";
+
 }

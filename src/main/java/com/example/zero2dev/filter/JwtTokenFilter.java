@@ -2,9 +2,12 @@ package com.example.zero2dev.filter;
 
 import com.example.zero2dev.exceptions.ResourceNotFoundException;
 import com.example.zero2dev.models.User;
+import com.example.zero2dev.services.BlacklistedTokenService;
 import com.example.zero2dev.services.IPSecurityService;
 import com.example.zero2dev.services.TokenService;
+import com.example.zero2dev.storage.MESSAGE;
 import com.example.zero2dev.storage.TokenType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,7 +22,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class JwtTokenFilter extends OncePerRequestFilter {
@@ -27,14 +32,18 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     private final UserDetailsService userDetailsService;
     private final TokenService tokenService;
     private final IPSecurityService ipSecurityService;
+    private final BlacklistedTokenService blacklistedTokenService;
+    private static final ObjectMapper objectMapper = new ObjectMapper();
     public JwtTokenFilter(JwtTokenProvider jwtTokenProvider,
                           UserDetailsService userDetailsService,
                           TokenService tokenService,
-                          IPSecurityService ipSecurityService) {
+                          IPSecurityService ipSecurityService,
+                          BlacklistedTokenService blacklistedTokenService) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.userDetailsService = userDetailsService;
         this.tokenService = tokenService;
         this.ipSecurityService = ipSecurityService;
+        this.blacklistedTokenService = blacklistedTokenService;
     }
 
     @Override
@@ -47,23 +56,35 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
                 return;
             }
+
             final String authHeader = request.getHeader("Authorization");
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write(JwtTokenFilter.createJsonResponse(401, MESSAGE.UNAUTHORIZED_ACCESS));
                 return;
             }
+
             if (ipSecurityService.isIPBlacklisted(getClientIP(request))) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "IP blocked due to suspicious activity");
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.getWriter().write(JwtTokenFilter.createJsonResponse(403, MESSAGE.IP_BLACKLISTED));
                 return;
             }
+
             final String token = authHeader.substring(7);
-            if (!this.tokenService.validateToken(token, TokenType.ACCESS)){
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid access token");
+            if (this.blacklistedTokenService.isTokenBlacklisted(token)) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.getWriter().write(JwtTokenFilter.createJsonResponse(403, MESSAGE.TOKEN_BLACKLISTED));
                 return;
             }
+
+            if (!this.tokenService.validateToken(token, TokenType.ACCESS)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write(JwtTokenFilter.createJsonResponse(401, MESSAGE.TOKEN_INVALID));
+                return;
+            }
+
             final String username = jwtTokenProvider.extractUserName(token);
-            if (username != null
-                    && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 User userDetails = (User) userDetailsService.loadUserByUsername(username);
                 if (jwtTokenProvider.validateToken(token)) {
                     UsernamePasswordAuthenticationToken authenticationToken =
@@ -76,9 +97,11 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
                 }
             }
+
             filterChain.doFilter(request, response);
         } catch (Exception e) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write(JwtTokenFilter.createJsonResponse(401, MESSAGE.GENERAL_ERROR));
         }
     }
     private boolean isByPassToken(@NonNull HttpServletRequest request) {
@@ -103,5 +126,17 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             ipAddress = request.getRemoteAddr();
         }
         return ipAddress;
+    }
+    public static String createJsonResponse(int status, String message) {
+        Map<String, Object> responseMap = new HashMap<>();
+        responseMap.put("status", status);
+        responseMap.put("message", message);
+
+        try {
+            return objectMapper.writeValueAsString(responseMap);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "{\"status\": 500, \"message\": \"Error creating JSON response\"}";
+        }
     }
 }

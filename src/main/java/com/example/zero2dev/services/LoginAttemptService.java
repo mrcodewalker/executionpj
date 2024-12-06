@@ -1,6 +1,7 @@
 package com.example.zero2dev.services;
 
 import com.example.zero2dev.dtos.LoginDTO;
+import com.example.zero2dev.exceptions.ValueNotValidException;
 import com.example.zero2dev.interfaces.ILoginAttemptService;
 import com.example.zero2dev.models.BlacklistedIP;
 import com.example.zero2dev.models.LoginAttempt;
@@ -8,8 +9,11 @@ import com.example.zero2dev.repositories.BlacklistedIPRepository;
 import com.example.zero2dev.repositories.LoginAttemptRepository;
 import com.example.zero2dev.storage.BlacklistStatus;
 import com.example.zero2dev.storage.LoginStatus;
+import com.example.zero2dev.storage.MESSAGE;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cglib.core.Local;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -36,14 +40,17 @@ public class LoginAttemptService implements ILoginAttemptService {
         this.blacklistedIPRepository = blacklistedIPRepository;
     }
     @Override
-    public void recordLoginAttempt(LoginDTO loginDTO, LoginStatus status) {
+    public void recordLoginAttempt(LoginDTO loginDTO, LoginStatus status, HttpServletRequest request) {
         LoginAttempt attempt = LoginAttempt.builder()
                 .username(loginDTO.getUsername())
                 .attemptTime(LocalDateTime.now())
                 .status(status)
                 .ipAddress(loginDTO.getIpAddress())
-                .deviceInfo(loginDTO.getDeviceInfo())
+                .deviceInfo(IpService.generateDeviceInfoString(request))
                 .build();
+//        if (status.equals(LoginStatus.SUCCESS)){
+//            this.unbanIP(loginDTO.getIpAddress());
+//        }
 
         this.loginAttemptRepository.save(attempt);
     }
@@ -60,6 +67,25 @@ public class LoginAttemptService implements ILoginAttemptService {
 
         return failedAttempts.size() >= this.maxFailedLogin;
     }
+    public void deleteLoginAttemptsByIpAndTimeRange(String ipAddress, LocalDateTime startTime) {
+        loginAttemptRepository.deleteLoginAttemptsByIpAddressAndTimeRange(ipAddress, LoginStatus.FAILED, startTime);
+    }
+    public final void unbanIP(Long id){
+        BlacklistedIP blacklistedIP = this.blacklistedIPRepository.findById(id)
+                .orElseThrow(() -> new ValueNotValidException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
+        blacklistedIP.setStatus(BlacklistStatus.EXPIRED);
+        this.blacklistedIPRepository.save(blacklistedIP);
+        this.deleteLoginAttemptsByIpAndTimeRange(blacklistedIP.getIpAddress(),
+                LocalDateTime.now().minusHours(timeBackTrack));
+    }
+    public final void unbanIP(String ipAddress){
+        BlacklistedIP blacklistedIP = this.blacklistedIPRepository.findByIpAddress(ipAddress)
+                .orElseThrow(() -> new ValueNotValidException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
+        blacklistedIP.setStatus(BlacklistStatus.EXPIRED);
+        this.blacklistedIPRepository.save(blacklistedIP);
+        this.deleteLoginAttemptsByIpAndTimeRange(blacklistedIP.getIpAddress(),
+                LocalDateTime.now().minusHours(timeBackTrack));
+    }
     @Scheduled(cron = "0 0 * * * ?")
     public void updateBlacklistedIPStatus() {
         List<BlacklistedIP> expiredEntries = blacklistedIPRepository
@@ -71,6 +97,9 @@ public class LoginAttemptService implements ILoginAttemptService {
         expiredEntries.forEach(entry -> {
             entry.setStatus(BlacklistStatus.EXPIRED);
             blacklistedIPRepository.save(entry);
+            this.deleteLoginAttemptsByIpAndTimeRange(
+                    entry.getIpAddress(),
+                    LocalDateTime.now().minusHours(timeBackTrack));
         });
     }
 //    @Scheduled(cron = "1 0 0 */7 * ?")

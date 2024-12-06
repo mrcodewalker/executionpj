@@ -2,6 +2,7 @@ package com.example.zero2dev.controllers;
 
 import com.example.zero2dev.dtos.RefreshTokenDTO;
 import com.example.zero2dev.services.AuthenticationService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,8 +22,8 @@ public class AuthenticationController {
         return ResponseEntity.ok(this.authenticationService.refreshToken(refreshTokenDTO.getRefreshToken()));
     }
     @PostMapping("/logout")
-    public ResponseEntity<?> logoutUser(){
-        authenticationService.logout();
+    public ResponseEntity<?> logoutUser(HttpServletRequest request){
+        authenticationService.logout(request);
         return ResponseEntity.ok(HttpStatus.ACCEPTED);
     }
 }

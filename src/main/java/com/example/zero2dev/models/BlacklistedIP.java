@@ -32,5 +32,7 @@ public class BlacklistedIP {
 
     @Enumerated(EnumType.STRING)
     private BlacklistStatus status;
+    @Column(name = "device_info", length = 255)
+    private String deviceInfo;
 }
 

@@ -37,6 +37,16 @@ public class WebSecurityConfig {
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
+//                                TOKEN
+                                .requestMatchers("/api/v1/token/filter").hasRole(Role.adminAccess())
+//                                REFRESH TOKEN
+                                .requestMatchers("/api/v1/refresh_token/filter").hasRole(Role.adminAccess())
+//                                BLACKLISTED TOKEN
+                                .requestMatchers("/api/v1/blacklisted_token/filter").hasRole(Role.adminAccess())
+//                                BLACKLISTED IP
+                                .requestMatchers("/api/v1/blacklisted_ip/filter").hasRole(Role.adminAccess())
+                                .requestMatchers("/api/v1/blacklisted_ip/unban/**").hasRole(Role.adminAccess())
+                                .requestMatchers("/api/v1/blacklisted_ip/**").hasRole(Role.adminAccess())
 //                                USER
                                 .requestMatchers("/api/v1/user/register").permitAll()
                                 .requestMatchers("/api/v1/user/login").permitAll()

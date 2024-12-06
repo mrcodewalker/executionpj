@@ -8,6 +8,7 @@ import com.example.zero2dev.exceptions.ValueNotValidException;
 import com.example.zero2dev.filter.JwtTokenProvider;
 import com.example.zero2dev.interfaces.IUserService;
 import com.example.zero2dev.mapper.UserMapper;
+import com.example.zero2dev.models.BlacklistedIP;
 import com.example.zero2dev.models.Role;
 import com.example.zero2dev.models.User;
 import com.example.zero2dev.repositories.ProblemRepository;
@@ -161,13 +162,13 @@ public class UserService implements IUserService {
     @Override
     public UserResponse login(LoginDTO loginDTO, HttpServletRequest request) {
         loginDTO.setIpAddress(IpService.getClientIp(request));
-        if (loginAttemptService.isAccountLocked(loginDTO.getUsername(), loginDTO.getIpAddress())){
-            this.ipSecurityService.createIPBlackList(loginDTO.getIpAddress());
+        if (loginAttemptService.isAccountLocked(loginDTO.getUsername(), loginDTO.getIpAddress())) {
+            this.ipSecurityService.createIPBlackList(request);
             throw new ValueNotValidException(MESSAGE.LOCKED_ACCOUNT);
         }
         User user = this.collectUserByUserName(loginDTO.getUsername());
         if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())){
-            this.loginAttemptService.recordLoginAttempt(loginDTO, LoginStatus.FAILED);
+            this.loginAttemptService.recordLoginAttempt(loginDTO, LoginStatus.FAILED, request);
             throw new ValueNotValidException(MESSAGE.INPUT_NOT_MATCH_EXCEPTION);
         }
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
@@ -177,12 +178,12 @@ public class UserService implements IUserService {
         try {
             authenticationManager.authenticate(authenticationToken);
         } catch (Exception e) {
-            this.loginAttemptService.recordLoginAttempt(loginDTO, LoginStatus.FAILED);
+            this.loginAttemptService.recordLoginAttempt(loginDTO, LoginStatus.FAILED, request);
             throw new ValueNotValidException(e.getMessage());
         }
         UserResponse response = this.mapper.toResponse(user);
         response.setAuthenticationResponse(authenticationService.login(user));
-        this.loginAttemptService.recordLoginAttempt(loginDTO, LoginStatus.SUCCESS);
+        this.loginAttemptService.recordLoginAttempt(loginDTO, LoginStatus.SUCCESS, request);
         return response;
     }
 
@@ -255,5 +256,8 @@ public class UserService implements IUserService {
         return (id!=null && id>0)
                 ? this.collectUser(id)
                 : this.collectUserByUserName(username);
+    }
+    public final boolean isIpAddressUnban(String ipAddress){
+        return ipSecurityService.isIPUnban(ipAddress);
     }
 }

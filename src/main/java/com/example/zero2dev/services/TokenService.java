@@ -1,12 +1,15 @@
 package com.example.zero2dev.services;
 
 import com.example.zero2dev.exceptions.ResourceNotFoundException;
+import com.example.zero2dev.exceptions.ValueNotValidException;
 import com.example.zero2dev.interfaces.ITokenService;
 import com.example.zero2dev.models.RefreshToken;
 import com.example.zero2dev.models.Token;
 import com.example.zero2dev.models.User;
 import com.example.zero2dev.repositories.RefreshTokenRepository;
 import com.example.zero2dev.repositories.TokenRepository;
+import com.example.zero2dev.responses.TokenResponse;
+import com.example.zero2dev.storage.MESSAGE;
 import com.example.zero2dev.storage.TokenType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class TokenService implements ITokenService {
@@ -71,7 +75,7 @@ public class TokenService implements ITokenService {
     }
 
     @Override
-    public void revokeAllUserTokens(User user) {
+    public List<Token> revokeAllUserTokens(User user) {
         List<Token> validTokens = tokenRepository.findAllValidTokensByUser(user.getId());
 
         validTokens.forEach(token -> {
@@ -80,6 +84,7 @@ public class TokenService implements ITokenService {
         });
 
         tokenRepository.saveAll(validTokens);
+        return validTokens;
     }
 
     @Override
@@ -92,11 +97,35 @@ public class TokenService implements ITokenService {
                         t.getExpiredAt().isAfter(LocalDateTime.now())
         ).orElse(false);
     }
+
+    @Override
+    public List<TokenResponse> filterToken() {
+        return Optional.of(this.tokenRepository.findAll())
+                .filter(items -> !items.isEmpty())
+                .map(items -> items.stream()
+                        .map(this::exchangeResponse)
+                        .collect(Collectors.toList()))
+                .orElseThrow(() -> new ValueNotValidException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
+    }
+
     public boolean validateRefreshToken(String rawToken, RefreshToken storedToken) {
         return passwordEncoder.matches(rawToken, storedToken.getToken());
     }
     public boolean validateToken(String rawToken, Token token){
         return passwordEncoder.matches(rawToken, token.getToken());
+    }
+    private TokenResponse exchangeResponse(Token token){
+        return TokenResponse.builder()
+                .id(token.getId())
+                .createdAt(token.getCreatedAt())
+                .expiredAt(token.getExpiredAt())
+                .updatedAt(token.getUpdatedAt())
+                .token(token.getToken())
+                .tokenType(token.getTokenType())
+                .expired(token.isExpired())
+                .revoked(token.isRevoked())
+                .username(token.getUser().getUsername())
+                .build();
     }
     public String generateUniqueRefreshToken() {
         return UUID.randomUUID().toString();

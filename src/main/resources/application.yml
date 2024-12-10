@@ -17,6 +17,19 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: info.codewalker@gmail.com
+    password: ${GOOGLE_KEY}
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+        debug: true
 zero2dev:
   session_expired_after: 2
   max_session_exists: 1
@@ -27,3 +40,4 @@ zero2dev:
   unban_after_hour: 1
   username: "admin"
   timeout: 5000
+  verify_url: ${VERIFY_URL}

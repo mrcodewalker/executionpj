@@ -17,6 +17,7 @@ public class Zero2devApplication {
 		System.setProperty("spring.datasource.username", dotenv.get("SPRING_DATASOURCE_USERNAME", "root"));
 		System.setProperty("spring.datasource.password", dotenv.get("SPRING_DATASOURCE_PASSWORD", "123456789"));
 		System.setProperty("cors.allowed.origins", dotenv.get("CORS_ALLOWED_ORIGINS"));
+		System.setProperty("GOOGLE_KEY", dotenv.get("GOOGLE_KEY"));
 		SpringApplication.run(Zero2devApplication.class, args);
 	}
 

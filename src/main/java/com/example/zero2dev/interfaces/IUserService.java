@@ -4,12 +4,13 @@ import com.example.zero2dev.dtos.LoginDTO;
 import com.example.zero2dev.dtos.UpdateUserDTO;
 import com.example.zero2dev.dtos.UserDTO;
 import com.example.zero2dev.responses.UserResponse;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
 
 public interface IUserService {
-    UserResponse createUser(UserDTO userDTO);
+    UserResponse createUser(UserDTO userDTO) throws MessagingException;
     UserResponse updateUser(UpdateUserDTO userDTO);
     UserResponse deleteUserById(Long id);
     List<UserResponse> getUserAvailable();

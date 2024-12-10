@@ -21,9 +21,12 @@ import com.example.zero2dev.responses.UserResponse;
 import com.example.zero2dev.storage.LoginStatus;
 import com.example.zero2dev.storage.MESSAGE;
 import com.example.zero2dev.storage.SubmissionStatus;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.sql.Update;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,6 +36,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,8 +54,9 @@ public class UserService implements IUserService {
     private final LoginAttemptService loginAttemptService;
     private final IPSecurityService ipSecurityService;
     private final UserSessionService userSessionService;
+    private final EmailService emailService;
     @Override
-    public UserResponse createUser(UserDTO userDTO) {
+    public UserResponse createUser(UserDTO userDTO) throws MessagingException {
         this.validAccount(userDTO);
         String avatarUrl = (userDTO.getAvatarUrl() != null && !"null".equals(userDTO.getAvatarUrl()) && userDTO.getAvatarUrl().length() > 8)
                 ? userDTO.getAvatarUrl()
@@ -63,6 +68,13 @@ public class UserService implements IUserService {
         exchangeUser.setRole(this.roleService.getRoleNew(2L));
         exchangeUser.setAvatarUrl(avatarUrl);
         exchangeUser.setIsActive(true);
+        String token = UUID.randomUUID().toString();
+        String verificationUrl = "http://localhost:8081/api/v1/auth/verify?token=" + token;
+        try {
+            emailService.sendVerificationEmail(exchangeUser.getEmail(), verificationUrl);
+        } catch (MessagingException e) {
+            throw new ResourceNotFoundException(MESSAGE.GENERAL_ERROR);
+        }
         return mapper.toResponse(this.userRepository.save(exchangeUser));
     }
     @Override
@@ -194,6 +206,7 @@ public class UserService implements IUserService {
         UserSession session = userSessionService.createSession(userSessionDTO, user);
         UserResponse response = this.mapper.toResponse(user);
         response.setAuthenticationResponse(authenticationService.login(session, user));
+        response.setRole(user.getRole().getRoleName());
         this.loginAttemptService.recordLoginAttempt(loginDTO, LoginStatus.SUCCESS, request);
         return response;
     }
@@ -232,7 +245,7 @@ public class UserService implements IUserService {
         if (userDTO.getPassword().length()<8){
             throw new ValueNotValidException(MESSAGE.INPUT_SIZE_ERROR);
         }
-        if (userDTO.getUsername().length()<6){
+        if (userDTO.getUsername().length()<8){
             throw new ValueNotValidException(MESSAGE.INPUT_SIZE_ERROR);
         }
         if (!userDTO.getEmail().contains("@gmail.com")){
@@ -241,13 +254,12 @@ public class UserService implements IUserService {
         Map<String, Boolean> checkResult = userRepository.checkUserExistence(
                 userDTO.getEmail(),
                 userDTO.getUsername());
-        if (checkResult.get("emailExists")) {
-            throw new ValueNotValidException(MESSAGE.EXISTED_EMAIL);
-        }
         if (checkResult.get("usernameExists")){
             throw new ValueNotValidException(MESSAGE.EXISTED_USERNAME);
         }
-
+        if (checkResult.get("emailExists")) {
+            throw new ValueNotValidException(MESSAGE.EXISTED_EMAIL);
+        }
     }
     private User exchangeEntity(UpdateUserDTO updateUserDTO){
         SecurityService.validateUserIdExceptAdmin(updateUserDTO.getId());

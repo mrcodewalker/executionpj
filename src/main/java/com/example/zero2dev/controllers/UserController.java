@@ -4,6 +4,7 @@ import com.example.zero2dev.dtos.LoginDTO;
 import com.example.zero2dev.dtos.UpdateUserDTO;
 import com.example.zero2dev.dtos.UserDTO;
 import com.example.zero2dev.services.UserService;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,11 +15,12 @@ import java.sql.PreparedStatement;
 @RestController
 @RequestMapping("/api/v1/user")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
 public class UserController {
     private final UserService userService;
     @PostMapping("/register")
     public ResponseEntity<?> createUser(
-            @RequestBody UserDTO userDTO){
+            @RequestBody UserDTO userDTO) throws MessagingException {
         return ResponseEntity.ok(
                 this.userService.createUser(userDTO));
     }

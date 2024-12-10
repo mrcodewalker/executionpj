@@ -7,6 +7,7 @@ import com.example.zero2dev.services.UserService;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +19,15 @@ import java.sql.PreparedStatement;
 @CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
 public class UserController {
     private final UserService userService;
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestParam String token, @RequestParam String newPassword) {
+        this.userService.resetPassword(token, newPassword);
+        return ResponseEntity.ok(HttpStatus.ACCEPTED);
+    }
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestParam String email) {
+        return this.userService.forgotPassword(email);
+    }
     @PostMapping("/register")
     public ResponseEntity<?> createUser(
             @RequestBody UserDTO userDTO) throws MessagingException {

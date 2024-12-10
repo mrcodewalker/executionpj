@@ -39,6 +39,8 @@ public class WebSecurityConfig {
                         authorizeRequests
 //                                TOKEN
                                 .requestMatchers("/api/v1/auth/verify").permitAll()
+                                .requestMatchers("/api/v1/user/forgot-password").permitAll()
+                                .requestMatchers("/api/v1/user/reset-password").permitAll()
                                 .requestMatchers("/api/v1/token/filter").hasRole(Role.adminAccess())
 //                                REFRESH TOKEN
                                 .requestMatchers("/api/v1/refresh_token/filter").hasRole(Role.adminAccess())

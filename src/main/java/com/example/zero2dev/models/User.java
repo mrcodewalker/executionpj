@@ -49,6 +49,8 @@ public class User implements UserDetails {
 
     @Column(name = "is_active", columnDefinition = "BOOLEAN DEFAULT TRUE")
     private Boolean isActive = true;
+    @Column(name = "forgot")
+    private String forgot;
     @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;

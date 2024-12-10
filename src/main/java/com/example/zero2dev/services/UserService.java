@@ -16,6 +16,7 @@ import com.example.zero2dev.models.UserSession;
 import com.example.zero2dev.repositories.ProblemRepository;
 import com.example.zero2dev.repositories.SubmissionRepository;
 import com.example.zero2dev.repositories.UserRepository;
+import com.example.zero2dev.responses.ApiResponse;
 import com.example.zero2dev.responses.AuthenticationResponse;
 import com.example.zero2dev.responses.UserResponse;
 import com.example.zero2dev.storage.LoginStatus;
@@ -55,6 +56,35 @@ public class UserService implements IUserService {
     private final IPSecurityService ipSecurityService;
     private final UserSessionService userSessionService;
     private final EmailService emailService;
+    public ResponseEntity<?> forgotPassword(String email){
+        User user = this.collectUserByEmail(email);
+        if (user == null) {
+            throw new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
+        }
+        String resetToken = UUID.randomUUID().toString();
+        this.savePasswordResetToken(user, resetToken);
+
+        String resetUrl = "http://localhost:4200/reset-password?token=" + resetToken;
+
+        try {
+            emailService.sendResetPassword(email, resetUrl);
+        } catch (MessagingException e) {
+            return ResponseEntity.status(500).body(new ApiResponse(false, "Failed to send email. Please try again later."));
+        }
+
+        return ResponseEntity.ok(new ApiResponse(true, "Password reset email has been sent."));
+    }
+    public void resetPassword(String token, String newPassword){
+        User user = this.userRepository.getUserByForgot(token)
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.TOKEN_EXPIRED));
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setForgot("RESET_PASSWORD_SUCCESSFULLY");
+        this.userRepository.save(user);
+    }
+    private void savePasswordResetToken(User user, String resetToken){
+        user.setForgot(resetToken);
+        this.userRepository.save(user);
+    }
     @Override
     public UserResponse createUser(UserDTO userDTO) throws MessagingException {
         this.validAccount(userDTO);

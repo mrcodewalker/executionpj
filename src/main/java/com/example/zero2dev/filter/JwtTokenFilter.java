@@ -64,11 +64,11 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 return;
             }
 
-//            if (ipSecurityService.isIPBlacklisted(getClientIP(request))) {
-//                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-//                response.getWriter().write(JwtTokenFilter.createJsonResponse(403, MESSAGE.IP_BLACKLISTED));
-//                return;
-//            }
+            if (ipSecurityService.isIPBlacklisted(getClientIP(request))) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.getWriter().write(JwtTokenFilter.createJsonResponse(403, MESSAGE.IP_BLACKLISTED));
+                return;
+            }
 
             final String token = authHeader.substring(7);
             if (this.blacklistedTokenService.isTokenBlacklisted(token)) {
@@ -110,6 +110,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 Pair.of(String.format("%s/user/register", apiPrefix), "POST"),
                 Pair.of(String.format("%s/user/login", apiPrefix), "POST"),
                 Pair.of(String.format("%s/auth/verify", apiPrefix), "GET"),
+                Pair.of(String.format("%s/user/verify", apiPrefix), "GET"),
                 Pair.of(String.format("%s/user/forgot-password", apiPrefix), "POST"),
                 Pair.of(String.format("%s/user/reset-password", apiPrefix), "POST")
                 );

@@ -25,6 +25,7 @@ import com.example.zero2dev.storage.SubmissionStatus;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.validator.routines.EmailValidator;
 import org.hibernate.sql.Update;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -56,6 +57,15 @@ public class UserService implements IUserService {
     private final IPSecurityService ipSecurityService;
     private final UserSessionService userSessionService;
     private final EmailService emailService;
+    public void verifyEmail(String token, String username){
+        User user = this.userRepository.getUserByForgot(token)
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.TOKEN_EXPIRED));
+        if (!user.getUsername().equalsIgnoreCase(username)){
+            throw new ResourceNotFoundException(MESSAGE.INPUT_NOT_MATCH_EXCEPTION);
+        }
+        user.setIsActive(true);
+        this.userRepository.save(user);
+    }
     public ResponseEntity<?> forgotPassword(String email){
         User user = this.collectUserByEmail(email);
         if (user == null) {
@@ -97,9 +107,10 @@ public class UserService implements IUserService {
         exchangeUser.setPhoneNumber(phoneNumber);
         exchangeUser.setRole(this.roleService.getRoleNew(2L));
         exchangeUser.setAvatarUrl(avatarUrl);
-        exchangeUser.setIsActive(true);
+        exchangeUser.setIsActive(false);
         String token = UUID.randomUUID().toString();
-        String verificationUrl = "http://localhost:8081/api/v1/auth/verify?token=" + token;
+        exchangeUser.setForgot(token);
+        String verificationUrl = "http://localhost:8081/api/v1/user/verify?token="+token+"&username="+exchangeUser.getUsername();
         try {
             emailService.sendVerificationEmail(exchangeUser.getEmail(), verificationUrl);
         } catch (MessagingException e) {
@@ -211,7 +222,12 @@ public class UserService implements IUserService {
             this.ipSecurityService.createIPBlackList(request);
             throw new ValueNotValidException(MESSAGE.IP_BLACKLISTED);
         }
-        User user = this.collectUserByUserName(loginDTO.getUsername());
+        User user = (EmailValidator.getInstance().isValid(loginDTO.getUsername())) ?
+                this.collectUserByEmail(loginDTO.getUsername()) :
+                this.collectUserByUserName(loginDTO.getUsername());
+        if (user == null) {
+            throw new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
+        }
         if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())){
             this.loginAttemptService.recordLoginAttempt(loginDTO, LoginStatus.FAILED, request);
             throw new ValueNotValidException(MESSAGE.INPUT_NOT_MATCH_EXCEPTION);
@@ -237,6 +253,8 @@ public class UserService implements IUserService {
         UserResponse response = this.mapper.toResponse(user);
         response.setAuthenticationResponse(authenticationService.login(session, user));
         response.setRole(user.getRole().getRoleName());
+        loginDTO.setUsername(user.getUsername());
+        response.setId(24112004+user.getId());
         this.loginAttemptService.recordLoginAttempt(loginDTO, LoginStatus.SUCCESS, request);
         return response;
     }

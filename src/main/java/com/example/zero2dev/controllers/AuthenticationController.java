@@ -28,12 +28,4 @@ public class AuthenticationController {
         authenticationService.logout(request);
         return ResponseEntity.ok(HttpStatus.ACCEPTED);
     }
-    @GetMapping("/verify")
-    public void verifyToken(@RequestParam String token, HttpServletResponse response) throws IOException {
-        if (token != null && !token.isEmpty()) {
-            response.sendRedirect("http://localhost:4200/login?secretCode=HAISIEUDEPTRAIVUTRU");
-        } else {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid or expired token.");
-        }
-    }
 }

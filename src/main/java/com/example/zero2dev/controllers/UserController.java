@@ -6,11 +6,13 @@ import com.example.zero2dev.dtos.UserDTO;
 import com.example.zero2dev.services.UserService;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.sql.PreparedStatement;
 
 @RestController
@@ -33,6 +35,17 @@ public class UserController {
             @RequestBody UserDTO userDTO) throws MessagingException {
         return ResponseEntity.ok(
                 this.userService.createUser(userDTO));
+    }
+    @GetMapping("/verify")
+    public void verifyToken(@RequestParam String token,
+                            @RequestParam String username,
+                            HttpServletResponse response) throws IOException {
+        if (token != null && !token.isEmpty()) {
+            this.userService.verifyEmail(token, username);
+            response.sendRedirect("http://localhost:4200/login?secretCode=HAISIEUDEPTRAIVUTRU");
+        } else {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid or expired token.");
+        }
     }
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(

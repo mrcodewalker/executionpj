@@ -11,7 +11,6 @@ import lombok.*;
 @Builder
 @Data
 public class SubmissionDTO {
-    private Long userId;
     private Long problemId;
     private Long contestId;
     private String sourceCode;

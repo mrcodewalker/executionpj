@@ -3,6 +3,7 @@ package com.example.zero2dev.services;
 import com.example.zero2dev.controllers.SubmissionController;
 import com.example.zero2dev.dtos.CodeStorageDTO;
 import com.example.zero2dev.dtos.CompileCodeDTO;
+import com.example.zero2dev.dtos.MappingDataSubmission;
 import com.example.zero2dev.dtos.SubmissionDTO;
 import com.example.zero2dev.exceptions.ResourceNotFoundException;
 import com.example.zero2dev.exceptions.ValueNotValidException;
@@ -39,20 +40,19 @@ public class SubmissionService implements ISubmissionService {
     private final CodeStorageService codeStorageService;
     private final TestCaseReaderService testCaseReaderService;
     private final CompileCodeService compileCodeService;
-    private final ProblemService problemService;
-    private final ContestService contestService;
-    private final UserService userService;
     private final ContestParticipantService contestParticipantService;
+    private final TestCasesService testCasesService;
     @Override
     public SubmissionResponse createSubmission(SubmissionDTO submissionDTO) {
-        SecurityService.validateUserIdExceptAdmin(submissionDTO.getUserId());
-        if (!contestParticipantService.joinedContest(submissionDTO.getContestId(), submissionDTO.getUserId())) {
+        Long userId = SecurityService.getUserIdByToken();
+        SecurityService.validateUserIdExceptAdmin(userId);
+        if (!contestParticipantService.joinedContest(submissionDTO.getContestId(),userId)) {
             throw new ValueNotValidException(MESSAGE.GENERAL_ERROR);
         }
 
-        Optional<Submission> existingSubmission = getLatestSubmissionValue(submissionDTO.getUserId(), submissionDTO.getProblemId());
-        Submission submission = prepareSubmission(submissionDTO, existingSubmission);
+        Optional<Submission> existingSubmission = getLatestSubmissionValue(userId, submissionDTO.getProblemId());
 
+        Submission submission = prepareSubmission(submissionDTO, existingSubmission);
         CompileCodeDTO compileCodeDTO = buildCompileCodeDTO(submissionDTO, submission);
         if (compileCodeDTO.getTestCases().isEmpty()) {
             throw new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
@@ -71,14 +71,10 @@ public class SubmissionService implements ISubmissionService {
         enrichResponse(response, submission, compileCodeResponse, detailMessage);
         return response;
     }
-    private Submission notExistsInDataBase(SubmissionDTO submissionDTO){
-        Pair<Pair<User, Problem>, Pair<Language, Contest>> data = this.checkValidSubmission(submissionDTO);
-        Submission submission = new Submission();
-        submission.setContest(data.getSecond().getSecond());
-        submission.setUser(data.getFirst().getFirst());
-        submission.setLanguage(data.getSecond().getFirst());
-        submission.setProblem(data.getFirst().getSecond());
-        return submission;
+    private MappingDataSubmission notExistsInDataBase(SubmissionDTO submissionDTO){
+        System.out.println("notExistsInDataBase c1");
+        MappingDataSubmission data = this.checkValidSubmission(submissionDTO);
+        return data;
     }
     @Override
     public List<SubmissionResponse> getSubmissionByUserId(Long userId) {
@@ -242,14 +238,15 @@ public class SubmissionService implements ISubmissionService {
                 .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
     @Transactional(readOnly = true)
-    public Pair<Pair<User, Problem>, Pair<Language, Contest>> checkValidSubmission(SubmissionDTO submissionDTO) {
+    public MappingDataSubmission checkValidSubmission(SubmissionDTO submissionDTO) {
+        System.out.println("checkValidSubmission c1");
         List<Object[]> results = submissionRepository.findSubmissionValidationData(
-                submissionDTO.getUserId(),
+                SecurityService.getUserIdByToken(),
                 submissionDTO.getProblemId(),
                 submissionDTO.getContestId(),
                 submissionDTO.getCompilerVersion()
         );
-
+        System.out.println("checkValidSubmission c2");
         if (results.isEmpty()) {
             throw new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
         }
@@ -264,28 +261,13 @@ public class SubmissionService implements ISubmissionService {
             throw new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
         }
 
-        return Pair.of(Pair.of(user, problem), Pair.of(language, contest));
+        return MappingDataSubmission.builder()
+                .user(user)
+                .problem(problem)
+                .contest(contest)
+                .language(language)
+                .build();
     }
-//    public Pair<Pair<User, Problem>, Pair<Language,Contest>> checkValidSubmission(SubmissionDTO submissionDTO){
-//        User user = this.userRepository.findById(submissionDTO.getUserId())
-//                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
-//        if (!user.getIsActive()){
-//            throw new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
-//        }
-//        Problem problem = this.problemRepository.findById(submissionDTO.getProblemId())
-//                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
-//        if (!problem.getIsActive()){
-//            throw new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
-//        }
-//        Language language = Optional.of(this.languageRepository.findByVersion(submissionDTO.getCompilerVersion()))
-//                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
-//        if (!language.getIsActive()){
-//            throw new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
-//        }
-//        Contest contest = this.contestRepository.findById(submissionDTO.getContestId())
-//                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
-//        return Pair.of(Pair.of(user, problem), Pair.of(language, contest));
-//    }
     public Language getLanguage(Long id){
         return this.languageRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
@@ -318,7 +300,6 @@ public class SubmissionService implements ISubmissionService {
         submission.setStatus(submission.getStatus());
         submission.setLanguage(this.getLanguageByCompilerVersion(submissionDTO.getCompilerVersion()));
         submission.setProblem(this.getProblem(submissionDTO.getProblemId()));
-        submission.setUser(this.getUser(submissionDTO.getUserId()));
         return submission;
     }
     private void checkValidProblemTimeLimit(Problem problem){
@@ -343,9 +324,8 @@ public class SubmissionService implements ISubmissionService {
                 .getDetailSubmissionByUserIdAndProblemId(userId, problemId, "ACCEPTED");
     }
     public Optional<Submission> getLatestSubmissionValue(Long userId, Long problemId) {
-        return Optional.ofNullable(submissionRepository
-                .findFirstByUser_IdAndProblem_IdOrderByCreatedAtDesc(userId, problemId)
-                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION)));
+        return submissionRepository
+                .findFirstByUser_IdAndProblem_IdOrderByCreatedAtDesc(userId, problemId);
     }
     public Submission findOrThrow(Long userId, Long problemId) {
         return submissionRepository
@@ -354,7 +334,9 @@ public class SubmissionService implements ISubmissionService {
     }
     private Submission prepareSubmission(SubmissionDTO submissionDTO, Optional<Submission> existingSubmission) {
         Submission submission = mapper.toEntity(submissionDTO);
+        System.out.println(submission+"HAI DEP TRAI 1---2");
         if (existingSubmission.isPresent()) {
+            System.out.println(submission+"HAI DEP TRAI c1");
             Submission existing = existingSubmission.get();
             submission.setId(existing.getId());
             submission.setCreatedAt(existing.getCreatedAt());
@@ -362,8 +344,13 @@ public class SubmissionService implements ISubmissionService {
             submission.setUser(existing.getUser());
             submission.setProblem(existing.getProblem());
             submission.setContest(existing.getContest());
+            System.out.println(submission+"HAI DEP TRAI c2");
         } else {
-            Submission newSubmission = notExistsInDataBase(submissionDTO);
+            System.out.println(submission+"HAI DEP TRAI c4");
+            MappingDataSubmission newSubmission = notExistsInDataBase(submissionDTO);
+            System.out.println(submission+"HAI DEP TRAI x1");
+            System.out.println(submission+"HAI DEP TRAI x1.1");
+            newSubmission.setProblem(newSubmission.getProblem());
             submission.setProblem(newSubmission.getProblem());
             submission.setLanguage(newSubmission.getLanguage());
             submission.setUser(newSubmission.getUser());
@@ -374,13 +361,13 @@ public class SubmissionService implements ISubmissionService {
 
     private CompileCodeDTO buildCompileCodeDTO(SubmissionDTO submissionDTO, Submission submission) {
         return CompileCodeDTO.builder()
-                .compilerVersion(CompilerVersion.valueOf(submission.getLanguage().getVersion()))
+                .compilerVersion(CompilerVersion.valueOf(submissionDTO.getCompilerVersion()))
                 .language(com.example.zero2dev.storage.Language.valueOf(submission.getLanguage().getName()))
                 .timeLimit(submission.getProblem().getTimeLimit())
                 .sourceCode(submissionDTO.getSourceCode())
-                .testCases(this.testCaseReaderService.getTestCases(
-                        submissionDTO.getProblemId()
-                        ,submission.getProblem().getTestCases()))
+                .testCases(
+                        this.testCasesService.getTestCaseDataService(submission.getProblem().getId())
+                )
                 .build();
     }
 
@@ -434,5 +421,11 @@ public class SubmissionService implements ISubmissionService {
         response.setAllTestPassed(compileCodeResponse.isAllTestsPassed());
         response.setTotalTest(submission.getTotalTest());
         response.setDetailMessage(detailMessage);
+    }
+    private TestCase toEntity(TestCasesResponse testCases){
+        return TestCase.builder()
+                .input(testCases.getInput())
+                .expectedOutput(testCases.getOutput())
+                .build();
     }
 }

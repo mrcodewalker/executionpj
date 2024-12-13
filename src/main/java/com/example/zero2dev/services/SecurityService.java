@@ -1,6 +1,7 @@
 package com.example.zero2dev.services;
 
 import com.example.zero2dev.exceptions.ResourceNotFoundException;
+import com.example.zero2dev.exceptions.ValueNotValidException;
 import com.example.zero2dev.filter.JwtTokenProvider;
 import com.example.zero2dev.models.Role;
 import com.example.zero2dev.models.User;
@@ -24,6 +25,13 @@ public class SecurityService {
         }
 
         return null;
+    }
+    public static Long getUserIdByToken(){
+        User user = getUserIdFromSecurityContext();
+        if (user==null){
+            throw new ValueNotValidException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
+        }
+        return user.getId();
     }
     public static boolean checkValidUserId(Long userId){
         User user = getUserIdFromSecurityContext();

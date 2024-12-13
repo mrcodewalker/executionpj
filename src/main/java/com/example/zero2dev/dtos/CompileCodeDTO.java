@@ -6,10 +6,6 @@ import com.example.zero2dev.storage.Language;
 import lombok.*;
 
 import java.util.List;
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor
 @Builder
 @Data
 public class CompileCodeDTO {

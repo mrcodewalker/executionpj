@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Array;
+import java.security.Security;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +31,11 @@ public class ContestParticipantService implements IContestParticipantService {
     private final SubmissionRepository submissionRepository;
     @Override
     public ContestParticipantResponse joinContest(ContestParticipantDTO contestParticipantDTO) {
+        User user = SecurityService.getUserIdFromSecurityContext();
+        if (user==null){
+            throw new ValueNotValidException(MESSAGE.TOKEN_EXPIRED);
+        }
+        contestParticipantDTO.setUserId(user.getId());
         SecurityService.validateUserIdExceptAdmin(contestParticipantDTO.getUserId());
         return Optional.of(contestParticipantDTO)
                 .map(this::validateContestParticipation)
@@ -69,6 +75,11 @@ public class ContestParticipantService implements IContestParticipantService {
     }
     @Override
     public ContestParticipantResponse updateTotalScore(ContestParticipantKey contestParticipantKey, Long problemId) {
+        User user = SecurityService.getUserIdFromSecurityContext();
+        if (user==null){
+            throw new ValueNotValidException(MESSAGE.TOKEN_EXPIRED);
+        }
+        contestParticipantKey.setUserId(user.getId());
         SecurityService.validateUserIdExceptAdmin(contestParticipantKey.getUserId());
         ContestParticipant existingRecord = this.getRecordByKey(contestParticipantKey);
         Problem problem = this.getProblem(problemId);
@@ -96,8 +107,10 @@ public class ContestParticipantService implements IContestParticipantService {
     public ContestParticipant validateKey(ContestParticipantKey contestParticipantKey){
         Contest contest = this.contestRepository.findById(
                 contestParticipantKey.getContestId()).orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
-        User user = this.userRepository.findById(
-                contestParticipantKey.getUserId()).orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
+        User user = SecurityService.getUserIdFromSecurityContext();
+        if (user==null){
+            throw new ValueNotValidException(MESSAGE.TOKEN_EXPIRED);
+        }
         return ContestParticipant.builder()
                 .id(contestParticipantKey)
                 .contest(contest)
@@ -105,7 +118,11 @@ public class ContestParticipantService implements IContestParticipantService {
                 .build();
     }
     public ContestParticipantKey exchangeKey(ContestParticipantDTO contestParticipantDTO){
-        return new ContestParticipantKey(contestParticipantDTO.getContestId(), contestParticipantDTO.getUserId());
+        User user = SecurityService.getUserIdFromSecurityContext();
+        if (user==null){
+            throw new ValueNotValidException(MESSAGE.TOKEN_EXPIRED);
+        }
+        return new ContestParticipantKey(contestParticipantDTO.getContestId(), user.getId());
     }
     public ContestParticipantKey mappingKey(Long contestId, Long userId){
         return new ContestParticipantKey(contestId, userId);

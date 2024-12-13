@@ -120,8 +120,9 @@ public class WebSecurityConfig {
                                 .requestMatchers("/api/v1/test_case/position/**").hasAnyRole(Role.developerAccess())
                                 .requestMatchers("/api/v1/test_case/update").hasAnyRole(Role.developerAccess())
                                 .requestMatchers("/api/v1/test_case/delete").hasAnyRole(Role.developerAccess())
-
-
+//                              TEST CASE
+                                .requestMatchers("/api/v1/test_cases/create").hasAnyRole(Role.developerAccess())
+                                .requestMatchers("/api/v1/test_cases/**").hasAnyRole(Role.developerAccess())
 
                                 .requestMatchers("/api/v1/submission/create").hasAnyRole(Role.fullRoleAccess())
                                 .requestMatchers("/oauth2/authorization/**", "/login/oauth2/code/**").permitAll()

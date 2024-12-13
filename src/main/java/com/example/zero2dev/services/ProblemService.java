@@ -118,7 +118,7 @@ public class ProblemService implements IProblemService {
         return categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
-    public ProblemResponse exchangeEntity(Problem problem){
+    public final ProblemResponse exchangeEntity(Problem problem){
         ProblemResponse response = problemMapper.toResponse(problem);
         response.setCategory(problem.getCategory());
         List<Object[]> data = this.submissionRepository.collectProblemGraph(problem.getId());

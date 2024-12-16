@@ -39,7 +39,7 @@ public class UserSessionService implements IUserSessionService {
     @Transactional
     public UserSession createSession(UserSessionDTO sessionDTO, User user) {
         List<UserSession> activeSessions = userSessionRepository.findActiveSessionsByUserId(user.getId());
-
+        System.out.println(activeSessions.size()+"createSession 1 HAI DEP TRAI");
         if (activeSessions.size() >= this.maxSessionExists) {
             UserSession oldestSession = activeSessions.get(0);
             oldestSession.setIsActive(false);
@@ -51,7 +51,7 @@ public class UserSessionService implements IUserSessionService {
         userSession.setLastActiveAt(LocalDateTime.now());
         userSession.setSessionId(generateSecureSessionId(sessionDTO.getUserId()));
         userSession.setExpiredAt(LocalDateTime.now().plusHours(sessionExpiredAfter));
-
+        System.out.println("createSession 2 HAI DEP TRAI");
         return userSessionRepository.save(userSession);
     }
 

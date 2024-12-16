@@ -33,7 +33,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 import java.util.Map;
@@ -218,15 +217,16 @@ public class UserService implements IUserService {
     @Override
     public UserResponse login(LoginDTO loginDTO, HttpServletRequest request) {
         loginDTO.setIpAddress(IpService.getClientIp(request));
-        if (loginAttemptService.isAccountLocked(loginDTO.getUsername(), loginDTO.getIpAddress())) {
-            this.ipSecurityService.createIPBlackList(request);
-            throw new ValueNotValidException(MESSAGE.IP_BLACKLISTED);
-        }
         User user = (EmailValidator.getInstance().isValid(loginDTO.getUsername())) ?
                 this.collectUserByEmail(loginDTO.getUsername()) :
                 this.collectUserByUserName(loginDTO.getUsername());
         if (user == null) {
             throw new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
+        }
+        loginDTO.setUsername(user.getUsername());
+        if (loginAttemptService.isAccountLocked(loginDTO.getUsername(), loginDTO.getIpAddress())) {
+            this.ipSecurityService.createIPBlackList(request);
+            throw new ValueNotValidException(MESSAGE.IP_BLACKLISTED);
         }
         if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())){
             this.loginAttemptService.recordLoginAttempt(loginDTO, LoginStatus.FAILED, request);
@@ -236,20 +236,24 @@ public class UserService implements IUserService {
                 user.getUsername(), loginDTO.getPassword(),
                 user.getAuthorities()
         );
+        System.out.println("HAI DEP TRAI"+authenticationToken);
         try {
             authenticationManager.authenticate(authenticationToken);
         } catch (Exception e) {
+            System.out.println("HAI DEP TRAI");
             this.loginAttemptService.recordLoginAttempt(loginDTO, LoginStatus.FAILED, request);
             throw new ValueNotValidException(e.getMessage());
         }
-        String userAgent = request.getHeader("User-Agent");
+        System.out.println("HAI DEP TRAI");
         UserSessionDTO userSessionDTO = UserSessionDTO.builder()
                 .userId(user.getId())
                 .deviceInfo(IpService.generateDeviceInfoString(request))
                 .ipAddress(loginDTO.getIpAddress())
                 .isActive(true)
                 .build();
+        System.out.println("HAI DEP TRAI");
         UserSession session = userSessionService.createSession(userSessionDTO, user);
+        System.out.println("HAI DEP TRAI");
         UserResponse response = this.mapper.toResponse(user);
         response.setAuthenticationResponse(authenticationService.login(session, user));
         response.setRole(user.getRole().getRoleName());

@@ -101,8 +101,11 @@ public class TestCasesService implements ITestCasesService {
         List<TestCasesResponse> responses = this.testCaseRepository.saveAll(list)
                 .stream()
                 .map(items -> {
-                    items.setInput(Base64Util.decodeBase64(items.getInput()));
-                    items.setOutput(Base64Util.decodeBase64(items.getOutput()));
+                    TestCases testCase = new TestCases(items);
+                    testCase.setInput(items.getInput());
+                    testCase.setOutput(items.getOutput());
+                    items.setInput(Base64Util.decodeBase64(testCase.getInput()));
+                    items.setOutput(Base64Util.decodeBase64(testCase.getOutput()));
                     return mapper.toResponse(items);
                 })
                 .toList();
@@ -115,21 +118,19 @@ public class TestCasesService implements ITestCasesService {
 
     @Override
     public ListTestCaseResponse getListTestCaseByProblemId(Long problemId) {
-        List<TestCases> list = this.testCaseRepository.findByProblemIdAndIsActiveOrderByTestCaseOrderAsc(problemId,true);
+        List<TestCases> list = this.testCaseRepository.findByProblemIdAndIsActiveOrderByTestCaseOrderAsc(problemId, true);
         if (list.isEmpty()) {
             return ListTestCaseResponse.builder()
                     .testCasesResponse(Collections.emptyList())
                     .problemResponse(null)
                     .build();
         }
+
         List<TestCasesResponse> responses = list
                 .stream()
-                .map(items -> {
-                    items.setInput(Base64Util.decodeBase64(items.getInput()));
-                    items.setOutput(Base64Util.decodeBase64(items.getOutput()));
-                    return mapper.toResponse(items);
-                })
+                .map(mapper::toResponse)
                 .toList();
+
         ProblemResponse problemResponse = this.exchangeEntity(list.get(0).getProblem());
         return ListTestCaseResponse.builder()
                 .testCasesResponse(responses)
@@ -141,10 +142,10 @@ public class TestCasesService implements ITestCasesService {
     public ListTestCaseResponse getTestCaseByProblemIdAndOrder(Long problemId, Long orderId) {
         TestCases testCases = this.testCaseRepository.findByProblemIdAndTestCaseOrder(problemId, orderId)
                 .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
-        testCases.setInput(Base64Util.decodeBase64(testCases.getInput()));
-        testCases.setOutput(Base64Util.decodeBase64(testCases.getOutput()));
+
         List<TestCasesResponse> list = new ArrayList<>();
         list.add(mapper.toResponse(testCases));
+
         return ListTestCaseResponse.builder()
                 .problemResponse(this.exchangeEntity(testCases.getProblem()))
                 .testCasesResponse(list)
@@ -160,13 +161,11 @@ public class TestCasesService implements ITestCasesService {
                     .problemResponse(null)
                     .build();
         }
+
         List<TestCasesResponse> responses = testCases.stream()
-                .map(items -> {
-                    items.setInput(Base64Util.decodeBase64(items.getInput()));
-                    items.setOutput(Base64Util.decodeBase64(items.getOutput()));
-                    return mapper.toResponse(items);
-                })
+                .map(mapper::toResponse)
                 .toList();
+
         ProblemResponse problemResponse = this.exchangeEntity(testCases.get(0).getProblem());
         return ListTestCaseResponse.builder()
                 .testCasesResponse(responses)
@@ -221,5 +220,14 @@ public class TestCasesService implements ITestCasesService {
                 .input(testCases.getInput())
                 .expectedOutput(testCases.getOutput())
                 .build();
+    }
+    public void encodeAllTestCase(Long problemId){
+        List<TestCases> listNonBase64 = this.testCaseRepository.findByProblemIdOrderByTestCaseOrderAsc(problemId);
+        for (TestCases testCases: listNonBase64){
+            testCases.setInput(Base64Util.encodeBase64(testCases.getInput()));
+            testCases.setOutput(Base64Util.encodeBase64(testCases.getOutput()));
+            testCases.setIsActive(true);
+        }
+        this.testCaseRepository.saveAll(listNonBase64);
     }
 }

@@ -62,7 +62,7 @@ public class SubmissionService implements ISubmissionService {
         String detailMessage = processCompileResults(submission, compileCodeResponse);
 
         SubmissionResponse response = SubmissionResponse.exchangeEntity(submissionRepository.save(submission));
-
+        response.setCompileCodeResponses(compileCodeResponse.getCompileCodeResponses());
         if (submission.getStatus().equals(SubmissionStatus.ACCEPTED)) {
             codeStorageService.createCodeStorage(parseDTO(submission, submissionDTO.getSourceCode()));
             response.setSourceCode(compileCodeDTO.getSourceCode());
@@ -73,8 +73,7 @@ public class SubmissionService implements ISubmissionService {
     }
     private MappingDataSubmission notExistsInDataBase(SubmissionDTO submissionDTO){
         System.out.println("notExistsInDataBase c1");
-        MappingDataSubmission data = this.checkValidSubmission(submissionDTO);
-        return data;
+        return this.checkValidSubmission(submissionDTO);
     }
     @Override
     public List<SubmissionResponse> getSubmissionByUserId(Long userId) {
@@ -339,10 +338,7 @@ public class SubmissionService implements ISubmissionService {
             System.out.println(submission+"HAI DEP TRAI c1");
             submission = existingSubmission.get();
         } else {
-            System.out.println(submission+"HAI DEP TRAI c4");
             MappingDataSubmission newSubmission = notExistsInDataBase(submissionDTO);
-            System.out.println(submission+"HAI DEP TRAI x1");
-            System.out.println(submission+"HAI DEP TRAI x1.1");
             newSubmission.setProblem(newSubmission.getProblem());
             submission.setProblem(newSubmission.getProblem());
             submission.setLanguage(newSubmission.getLanguage());

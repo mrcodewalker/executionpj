@@ -37,4 +37,7 @@ public class TestCases {
 
     @Column(name = "test_case_order")
     private Long testCaseOrder = 0L;
+
+    public TestCases(TestCases items) {
+    }
 }

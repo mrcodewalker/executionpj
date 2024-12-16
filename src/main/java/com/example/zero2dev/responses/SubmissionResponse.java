@@ -4,7 +4,10 @@ import com.example.zero2dev.models.Language;
 import com.example.zero2dev.models.Problem;
 import com.example.zero2dev.models.Submission;
 import com.example.zero2dev.storage.SubmissionStatus;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -27,6 +30,8 @@ public class SubmissionResponse {
     private String compilerVersion;
     private String languageName;
     private boolean allTestPassed;
+    @JsonProperty("list_compile_code")
+    private List<CompileCodeResponse> compileCodeResponses;
     public static SubmissionResponse exchangeEntity(Submission submission){
         return SubmissionResponse.builder()
                 .id(submission.getId())

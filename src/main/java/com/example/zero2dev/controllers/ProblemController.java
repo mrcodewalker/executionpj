@@ -7,7 +7,6 @@ import com.example.zero2dev.responses.ProblemResponse;
 import com.example.zero2dev.services.ProblemService;
 import com.example.zero2dev.storage.Difficulty;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.query.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;

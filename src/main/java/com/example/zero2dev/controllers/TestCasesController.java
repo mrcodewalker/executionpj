@@ -3,6 +3,7 @@ package com.example.zero2dev.controllers;
 import com.example.zero2dev.dtos.TestCasesDTO;
 import com.example.zero2dev.services.TestCasesService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,5 +47,10 @@ public class TestCasesController {
     @PostMapping("/collect/all/{id}")
     public ResponseEntity<?> collectAllTestCase(@PathVariable("id") Long id){
         return ResponseEntity.ok(this.testCasesService.getAllTestCase(id));
+    }
+    @PostMapping("/encode/all/{id}")
+    public ResponseEntity<?> encodeData(@PathVariable("id") Long id){
+        this.testCasesService.encodeAllTestCase(id);
+        return ResponseEntity.ok(HttpStatus.ACCEPTED);
     }
 }

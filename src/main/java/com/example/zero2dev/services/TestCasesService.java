@@ -9,13 +9,12 @@ import com.example.zero2dev.models.TestCase;
 import com.example.zero2dev.models.TestCases;
 import com.example.zero2dev.repositories.ProblemRepository;
 import com.example.zero2dev.repositories.TestCaseRepository;
-import com.example.zero2dev.responses.ListTestCaseResponse;
-import com.example.zero2dev.responses.ProblemResponse;
-import com.example.zero2dev.responses.TestCaseResponse;
-import com.example.zero2dev.responses.TestCasesResponse;
+import com.example.zero2dev.responses.*;
 import com.example.zero2dev.storage.MESSAGE;
 import com.example.zero2dev.utils.Base64Util;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import javax.swing.text.html.Option;
@@ -31,7 +30,6 @@ public class TestCasesService implements ITestCasesService {
     private final ProblemRepository problemRepository;
     private final TestCaseRepository testCaseRepository;
     private final TestCasesMapper mapper;
-    private final ProblemService problemService;
     @Override
     public ListTestCaseResponse createTestCase(TestCasesDTO testCasesDTO) {
         TestCases testCases = new TestCases();
@@ -229,5 +227,15 @@ public class TestCasesService implements ITestCasesService {
             testCases.setIsActive(true);
         }
         this.testCaseRepository.saveAll(listNonBase64);
+    }
+    public List<ExampleTestCasesResponse> getExampleTestCase(int limit, Long problemId){
+        Pageable pageable = PageRequest.of(0, limit);
+        List<TestCases> list = this.testCaseRepository.findTestCasesByProblemIdAndLimit(problemId, pageable);
+        if (list.isEmpty()){
+            return new ArrayList<>();
+        }
+        return list.stream()
+                .map(this.mapper::toResponseEx)
+                .collect(Collectors.toList());
     }
 }

@@ -12,6 +12,7 @@ public class ContestRankingResponse {
     private Long contestId;
     private Long userId;
     private String userName;
+    private String avatarUrl;
     private Long rank;
     private Long totalScore;
     private Long totalExecutionTime;

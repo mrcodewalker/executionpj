@@ -39,6 +39,20 @@ public class Problem {
 
     @Column(columnDefinition = "BIGINT DEFAULT 0")
     private Long points = 0L;
+    @Column(columnDefinition = "DEFAULT NULL")
+    private String tag;
+    @Column(columnDefinition = "DEFAULT ''")
+    private String constraints;
+    @Column(columnDefinition = "DEFAULT ''")
+    private String inputFormat;
+    @Column(columnDefinition = "DEFAULT ''")
+    private String outputFormat;
+    @Column(name = "memory_limit", columnDefinition = "BIGINT DEFAULT 0")
+    private Long memoryLimit;
+    @Column(name = "limit_test", columnDefinition = "BIGINT DEFAULT 1")
+    private Long limitTest;
+    @Column(name = "contest_id", columnDefinition = "BIGINT DEFAULT 1")
+    private Long contestId;
 
     @Column(name = "is_active", columnDefinition = "BOOLEAN DEFAULT TRUE")
     private Boolean isActive = true;

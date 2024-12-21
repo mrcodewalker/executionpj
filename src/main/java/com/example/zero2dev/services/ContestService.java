@@ -12,8 +12,11 @@ import com.example.zero2dev.storage.MESSAGE;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import javax.swing.text.html.Option;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -65,5 +68,19 @@ public class ContestService implements IContestService {
         if (contestDTO.getEndTime().isBefore(contestDTO.getStartTime())){
             throw new TimeNotValidException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
         }
+    }
+    public List<ContestResponse> filterAll(){
+        return Optional.of(
+                this.contestRepository.findAll())
+                .filter(items -> !items.isEmpty())
+                .map(items -> items.stream()
+                        .map(clone -> {
+                            ContestResponse response = mapper.toResponse(clone);
+                            response.setTag(clone.getTag());
+                            response.setParticipants((long) clone.getParticipants().size());
+                            return response;
+                        })
+                        .collect(Collectors.toList()))
+                .orElse(new ArrayList<>());
     }
 }

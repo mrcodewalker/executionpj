@@ -50,7 +50,7 @@ public class SubmissionService implements ISubmissionService {
             throw new ValueNotValidException(MESSAGE.GENERAL_ERROR);
         }
 
-        Optional<Submission> existingSubmission = getLatestSubmissionValue(userId, submissionDTO.getProblemId());
+        Optional<Submission> existingSubmission = getLatestSubmissionValue(userId, submissionDTO.getProblemId(), submissionDTO.getContestId());
 
         Submission submission = prepareSubmission(submissionDTO, existingSubmission);
         CompileCodeDTO compileCodeDTO = buildCompileCodeDTO(submissionDTO, submission);
@@ -60,7 +60,6 @@ public class SubmissionService implements ISubmissionService {
 
         ListCompileCodeResponse compileCodeResponse = compileCodeService.compileCode(compileCodeDTO);
         String detailMessage = processCompileResults(submission, compileCodeResponse);
-
         SubmissionResponse response = SubmissionResponse.exchangeEntity(submissionRepository.save(submission));
         response.setCompileCodeResponses(compileCodeResponse.getCompileCodeResponses());
         if (submission.getStatus().equals(SubmissionStatus.ACCEPTED)) {
@@ -223,6 +222,7 @@ public class SubmissionService implements ISubmissionService {
                 .totalScore((index[3] != null) ? ((BigDecimal)index[3]).toBigInteger().longValue() : 0L)
                 .totalExecutionTime((index[4]!=null) ? ((BigDecimal)index[4]).toBigInteger().longValue() : 0L)
                 .totalMemoryUsed((index[5]!=null) ? ((BigDecimal)index[5]).toBigInteger().longValue() : 0L)
+                .avatarUrl((((String) index[6]).length()>0) ? (String)index[6] : "https://imgur.com/dahLgEU")
                 .build();
     }
 
@@ -322,13 +322,13 @@ public class SubmissionService implements ISubmissionService {
         return submissionRepository
                 .getDetailSubmissionByUserIdAndProblemId(userId, problemId, "ACCEPTED");
     }
-    public Optional<Submission> getLatestSubmissionValue(Long userId, Long problemId) {
+    public Optional<Submission> getLatestSubmissionValue(Long userId, Long problemId, Long contestId) {
         return submissionRepository
-                .findFirstByUser_IdAndProblem_IdOrderByCreatedAtDesc(userId, problemId);
+                .findFirstByUser_IdAndProblem_IdAndContest_IdOrderByCreatedAtDesc(userId, problemId, contestId);
     }
-    public Submission findOrThrow(Long userId, Long problemId) {
+    public Submission findOrThrow(Long userId, Long problemId, Long contestId) {
         return submissionRepository
-                .findFirstByUser_IdAndProblem_IdOrderByCreatedAtDesc(userId, problemId)
+                .findFirstByUser_IdAndProblem_IdAndContest_IdOrderByCreatedAtDesc(userId, problemId, contestId)
                 .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
     private Submission prepareSubmission(SubmissionDTO submissionDTO, Optional<Submission> existingSubmission) {

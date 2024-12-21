@@ -5,11 +5,12 @@ import com.example.zero2dev.dtos.ProblemDTO;
 import com.example.zero2dev.models.ContestParticipant;
 import com.example.zero2dev.models.ContestParticipantKey;
 import com.example.zero2dev.responses.ContestParticipantResponse;
+import com.example.zero2dev.responses.SecretResponse;
 
 import java.util.List;
 
 public interface IContestParticipantService {
-    ContestParticipantResponse joinContest(ContestParticipantDTO contestParticipantDTO);
+    SecretResponse joinContest(ContestParticipantDTO contestParticipantDTO);
     List<ContestParticipantResponse> getListUserJoined(Long contestId);
     List<ContestParticipantResponse> getListContestUserJoined(Long userId);
     ContestParticipantResponse deleteByGroupKey(ContestParticipantKey contestParticipantKey);

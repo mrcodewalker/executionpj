@@ -20,6 +20,11 @@ public class ProblemDTO {
     private Long timeLimit;
     private Long points;
     private Boolean isActive;
+    private String tag;
+    private Long memoryLimit;
+    private Long limitTest;
+    private String inputFormat;
+    private String outputFormat;
     public static ProblemDTO fromEntity(Problem problem) {
         ProblemDTO dto = new ProblemDTO();
         dto.setTitle(problem.getTitle());
@@ -39,6 +44,7 @@ public class ProblemDTO {
                 .points(problem.getPoints())
                 .timeLimit(problem.getTimeLimit())
                 .title(problem.getTitle())
+                .tag(problem.getTag())
                 .build();
     }
     public static Problem createFromEntity(Category category, ProblemDTO problemDTO){
@@ -50,6 +56,7 @@ public class ProblemDTO {
                 .timeLimit(problemDTO.getTimeLimit())
                 .points(problemDTO.getPoints())
                 .isActive(true)
+                .tag(problemDTO.getTag())
                 .build();
     }
 }

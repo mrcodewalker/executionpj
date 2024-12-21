@@ -26,7 +26,7 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     @Query("SELECT s FROM Submission s WHERE s.executionTime = (" +
             "SELECT MIN(s2.executionTime) FROM Submission s2)")
     List<Submission> findSubmissionsWithLowestExecutionTime();
-    Optional<Submission> findFirstByUser_IdAndProblem_IdOrderByCreatedAtDesc(Long userId, Long problemId);
+    Optional<Submission> findFirstByUser_IdAndProblem_IdAndContest_IdOrderByCreatedAtDesc(Long userId, Long problemId, Long contestId);
     @Query("SELECT COUNT(s) FROM Submission s WHERE s.user.id = :userId AND s.status = :status")
     Long countByUserIdAndStatus(@Param("userId") Long userId, @Param("status") SubmissionStatus status);
     @Query("SELECT COUNT(s) FROM Submission s WHERE s.problem.id = :problemId AND s.status = :status")
@@ -49,7 +49,7 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     List<Object[]> collectProblemGraph(
             @Param("problemId") Long problemId);
     @Query(value = "SELECT s.contest_id,s.user_id,u.username, SUM(p.points) AS total_score," +
-            "SUM(s.execution_time) AS exec_time, SUM(s.memory_used) AS mem_used " +
+            "SUM(s.execution_time) AS exec_time, SUM(s.memory_used) AS mem_used, u.avatar_url " +
             "FROM submission s " +
             "LEFT JOIN `user` u ON s.user_id = u.id " +
             "LEFT JOIN problem p ON s.problem_id = p.id " +

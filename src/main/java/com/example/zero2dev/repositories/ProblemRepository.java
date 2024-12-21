@@ -20,11 +20,13 @@ public interface ProblemRepository extends JpaRepository<Problem, Long> {
     @Query("SELECT p FROM Problem p WHERE " +
             "(:title IS NULL OR p.title LIKE %:title%) AND " +
             "(:difficult IS NULL OR p.difficult = :difficult) AND " +
+            "(:contestId IS NULL OR p.contestId = :contestId) AND " +
             "(:categoryId IS NULL OR p.category.id = :categoryId)")
     Page<Problem> searchProblems(
             @Param("title") String title,
             @Param("difficult") Difficulty difficult,
             @Param("categoryId") Long categoryId,
+            @Param("contestId") Long contestId,
             Pageable pageable
     );
 }

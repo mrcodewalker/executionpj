@@ -74,6 +74,7 @@ public class WebSecurityConfig {
                                 .requestMatchers("/api/v1/code/storage/filter/**").hasAnyRole(Role.fullRoleAccess())
                                 .requestMatchers("/api/v1/code/storage/delete/**").hasAnyRole(Role.adminAccess())
 //                              CONTEST
+                                .requestMatchers("/api/v1/contest/filter/all").permitAll()
                                 .requestMatchers("/api/v1/contest/create").hasAnyRole(Role.adminAccess())
                                 .requestMatchers("/api/v1/contest/get**").hasAnyRole(Role.fullRoleAccess())
                                 .requestMatchers("/api/v1/contest/available/contest**").hasAnyRole(Role.fullRoleAccess())

@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Service
@@ -34,6 +35,8 @@ public class ProblemService implements IProblemService {
     private final CategoryRepository categoryRepository;
     private final ProblemMapper problemMapper;
     private final SubmissionRepository submissionRepository;
+    private final TestCasesService testCasesService;
+    private final ContestParticipantService contestParticipantService;
 
     @Override
     public ProblemResponse createProblem(ProblemDTO problemDTO) {
@@ -66,15 +69,22 @@ public class ProblemService implements IProblemService {
 
     @Override
     public ProblemResponse getProblemById(Long id) {
-        return this.exchangeEntity(this.findProblemById(id));
+        Problem problem = this.findProblemById(id);
+        ProblemResponse problemResponse = this.exchangeEntity(problem);
+        problemResponse.setList(this.testCasesService.getExampleTestCase(
+                Math.toIntExact(problem.getLimitTest()),id));
+        return problemResponse;
     }
 
     @Override
     public Page<ProblemResponse> searchProblems(String title, Difficulty difficult,
-                                           Long categoryId, int page, int size) {
+                                           Long contestId, Long categoryId, int page, int size) {
+        if (!contestParticipantService.isUserJoinedContest(contestId, Objects.requireNonNull(SecurityService.getUserIdFromSecurityContext()).getId())){
+            throw new ResourceNotFoundException(MESSAGE.HAVE_NOT_JOINED);
+        }
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
         Page<Problem> problemPage = problemRepository.searchProblems(title, difficult,
-                categoryId, pageable);
+                categoryId,contestId, pageable);
         return problemPage.map(this::exchangeEntity);
     }
 
@@ -120,6 +130,7 @@ public class ProblemService implements IProblemService {
     }
     public final ProblemResponse exchangeEntity(Problem problem){
         ProblemResponse response = problemMapper.toResponse(problem);
+        response.setId(problem.getId());
         response.setCategory(problem.getCategory());
         List<Object[]> data = this.submissionRepository.collectProblemGraph(problem.getId());
         Long sum = 0L;
@@ -132,6 +143,11 @@ public class ProblemService implements IProblemService {
         }
         response.setAcceptedSubmission(totalAccepted);
         response.setTotalSubmission(sum);
+        response.setTag(problem.getTag());
+        response.setConstraints(problem.getConstraints());
+        response.setMemoryLimit(problem.getMemoryLimit());
+        response.setInputFormat(problem.getInputFormat());
+        response.setOutputFormat(problem.getOutputFormat());
         return response;
     }
 }

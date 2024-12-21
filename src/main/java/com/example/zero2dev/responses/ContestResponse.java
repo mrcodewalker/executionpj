@@ -16,4 +16,6 @@ public class ContestResponse {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private String type;
+    private Long participants;
+    private String tag;
 }

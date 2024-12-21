@@ -37,5 +37,6 @@ public class MESSAGE {
     public static final String TOKEN_BLACKLISTED = "The provided token has been blacklisted. Please log in again.";
     public static final String TOKEN_EXPIRED = "The token has expired. Please log in again to obtain a new one.";
     public static final String TOKEN_INVALID = "The token is invalid. Please check your credentials and try again.";
-
+    public static final String USER_JOINED = "Your account has already joined the contest. Please join the contest to participate!";
+    public static final String HAVE_NOT_JOINED = "Please join the contest!";
 }

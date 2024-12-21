@@ -8,6 +8,7 @@ import com.example.zero2dev.interfaces.IContestParticipantService;
 import com.example.zero2dev.models.*;
 import com.example.zero2dev.repositories.*;
 import com.example.zero2dev.responses.ContestParticipantResponse;
+import com.example.zero2dev.responses.SecretResponse;
 import com.example.zero2dev.storage.MESSAGE;
 import com.example.zero2dev.storage.SubmissionStatus;
 import lombok.RequiredArgsConstructor;
@@ -30,20 +31,24 @@ public class ContestParticipantService implements IContestParticipantService {
     private final ProblemRepository problemRepository;
     private final SubmissionRepository submissionRepository;
     @Override
-    public ContestParticipantResponse joinContest(ContestParticipantDTO contestParticipantDTO) {
+    public SecretResponse joinContest(ContestParticipantDTO contestParticipantDTO) {
         User user = SecurityService.getUserIdFromSecurityContext();
         if (user==null){
             throw new ValueNotValidException(MESSAGE.TOKEN_EXPIRED);
         }
         contestParticipantDTO.setUserId(user.getId());
         SecurityService.validateUserIdExceptAdmin(contestParticipantDTO.getUserId());
-        return Optional.of(contestParticipantDTO)
+        Optional.of(contestParticipantDTO)
                 .map(this::validateContestParticipation)
                 .map(this::exchangeKey)
                 .map(this::validateKey)
                 .map(this.contestParticipantRepository::save)
-                .map(this::exchangeResponse)
                 .orElseThrow(() -> new ValueNotValidException(MESSAGE.DATA_SAVE_ERROR));
+        return SecretResponse.builder()
+                .status(200L)
+                .message("You have been joined contest successfully! Hope you enjoy :>")
+                .errors(new String[]{})
+                .build();
     }
     @Override
     public List<ContestParticipantResponse> getListUserJoined(Long contestId) {
@@ -168,7 +173,7 @@ public class ContestParticipantService implements IContestParticipantService {
     }
     private ContestParticipantDTO validateContestParticipation(ContestParticipantDTO dto) {
         if (isUserJoinedContest(dto.getContestId(), dto.getUserId())) {
-            throw new ValueNotValidException(MESSAGE.GENERAL_ERROR);
+            throw new ValueNotValidException(MESSAGE.USER_JOINED);
         }
         return dto;
     }

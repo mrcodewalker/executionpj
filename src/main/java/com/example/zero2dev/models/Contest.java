@@ -31,6 +31,8 @@ public class Contest {
 
     @Column(length = 50)
     private String type;
+    @Column(length = 255)
+    private String tag;
 
     @OneToMany(mappedBy = "contest")
     @JsonIgnore

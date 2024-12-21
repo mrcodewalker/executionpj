@@ -11,7 +11,7 @@ public interface IProblemService {
     ProblemResponse updateProblem(Long id, ProblemDTO problemDTO);
     void deleteProblem(Long id);
     ProblemResponse getProblemById(Long id);
-    Page<ProblemResponse> searchProblems(String title, Difficulty difficult,
+    Page<ProblemResponse> searchProblems(String title, Difficulty difficult, Long contestId,
                                     Long categoryId, int page, int size);
     void incrementSubmissionCount(Long problemId);
     void incrementAcceptedSubmissionCount(Long problemId, SubmissionStatus status);

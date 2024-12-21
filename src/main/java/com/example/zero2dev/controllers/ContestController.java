@@ -21,6 +21,10 @@ public class ContestController {
             @RequestParam("id") Long id){
         return ResponseEntity.ok(this.contestService.getContestById(id));
     }
+    @GetMapping("/filter/all")
+    public ResponseEntity<?> getAllContest(){
+        return ResponseEntity.ok(this.contestService.filterAll());
+    }
     @PostMapping("/available/contest")
     public ResponseEntity<?> getAvailableContest(){
         return ResponseEntity.ok(this.contestService.listContestValid());

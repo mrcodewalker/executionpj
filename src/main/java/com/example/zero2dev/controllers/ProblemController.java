@@ -50,10 +50,11 @@ public class ProblemController {
             @RequestParam(required = false) String title,
             @RequestParam(required = false) Difficulty difficult,
             @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Long contestId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(new CustomPageResponse<>(problemService.searchProblems(
-                title, difficult, categoryId, page, size))
+                title, difficult, contestId, categoryId, page, size))
         );
     }
 }

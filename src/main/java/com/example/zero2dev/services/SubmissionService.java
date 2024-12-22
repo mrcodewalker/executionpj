@@ -337,6 +337,7 @@ public class SubmissionService implements ISubmissionService {
         if (existingSubmission.isPresent()) {
             System.out.println(submission+"HAI DEP TRAI c1");
             submission = existingSubmission.get();
+            submission.setLanguage(this.getLanguageByCompilerVersion(submissionDTO.getCompilerVersion()));
         } else {
             MappingDataSubmission newSubmission = notExistsInDataBase(submissionDTO);
             newSubmission.setProblem(newSubmission.getProblem());

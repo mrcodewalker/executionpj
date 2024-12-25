@@ -4,7 +4,9 @@ import com.example.zero2dev.dtos.ProblemDTO;
 import com.example.zero2dev.models.Problem;
 import com.example.zero2dev.responses.CustomPageResponse;
 import com.example.zero2dev.responses.ProblemResponse;
+import com.example.zero2dev.responses.ProblemSolvedResponse;
 import com.example.zero2dev.services.ProblemService;
+import com.example.zero2dev.services.SubmissionService;
 import com.example.zero2dev.storage.Difficulty;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class ProblemController {
 
     private final ProblemService problemService;
+    private final SubmissionService submissionService;
 
     @PostMapping("/create")
     public ResponseEntity<?> createProblem(@RequestBody ProblemDTO problemDTO) {
@@ -53,8 +56,8 @@ public class ProblemController {
             @RequestParam(required = false) Long contestId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(new CustomPageResponse<>(problemService.searchProblems(
-                title, difficult, contestId, categoryId, page, size))
-        );
+        ProblemSolvedResponse response = this.submissionService.getProblemsSolved(contestId);
+        ProblemSolvedResponse realResponse = this.problemService.searchProblems(response, title, difficult, contestId, categoryId, page, size);
+        return ResponseEntity.ok(realResponse);
     }
 }

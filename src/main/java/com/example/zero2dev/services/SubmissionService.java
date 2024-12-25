@@ -200,7 +200,37 @@ public class SubmissionService implements ISubmissionService {
                 .build();
         return response;
     }
-
+    public ProblemSolvedResponse getProblemsSolved(Long contestId){
+        if (!this.contestRepository.existsById(contestId)){
+            throw new ResourceNotFoundException(MESSAGE.GENERAL_ERROR);
+        }
+        User user = SecurityService.getUserIdFromSecurityContext();
+        if (user==null){
+            throw new ResourceNotFoundException(MESSAGE.GENERAL_ERROR);
+        }
+        List<Object[]> list = this.submissionRepository.getProblemSolved(user.getId(), contestId);
+        List<SolvedResponse> responses = new ArrayList<>();
+        for (int i=0;i<list.size();i++){
+            Object[] clone = list.get(i);
+            responses.add(SolvedResponse.builder()
+                    .submissionId((Long)clone[0])
+                    .problemId((Long)clone[2])
+                    .sourceCode((String)clone[3])
+                    .status((String)clone[5])
+                    .executionTime((Long)clone[6])
+                    .memoryUsed((Long)clone[7])
+                    .contestId((Long)clone[8])
+                    .message((String)clone[9])
+                    .failedAt((Long)clone[10])
+                    .totalTest((Long)clone[11])
+                    .languageName((String)clone[12])
+                    .compilerVersion((String)clone[13])
+                    .build());
+        }
+        return ProblemSolvedResponse.builder()
+                .responseList(responses)
+                .build();
+    }
     @Override
     public List<ContestRankingResponse> getRankingByContestId(Long contestId) {
         List<Object[]> data = this.submissionRepository.getContestRankingByContestId(contestId, SubmissionStatus.ACCEPTED.toString());

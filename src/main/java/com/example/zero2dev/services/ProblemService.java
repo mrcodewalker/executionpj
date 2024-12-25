@@ -9,7 +9,9 @@ import com.example.zero2dev.models.Problem;
 import com.example.zero2dev.repositories.CategoryRepository;
 import com.example.zero2dev.repositories.ProblemRepository;
 import com.example.zero2dev.repositories.SubmissionRepository;
+import com.example.zero2dev.responses.CustomPageResponse;
 import com.example.zero2dev.responses.ProblemResponse;
+import com.example.zero2dev.responses.ProblemSolvedResponse;
 import com.example.zero2dev.storage.Difficulty;
 import com.example.zero2dev.storage.MESSAGE;
 import com.example.zero2dev.storage.SubmissionStatus;
@@ -22,6 +24,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
@@ -77,15 +80,19 @@ public class ProblemService implements IProblemService {
     }
 
     @Override
-    public Page<ProblemResponse> searchProblems(String title, Difficulty difficult,
-                                           Long contestId, Long categoryId, int page, int size) {
+    public ProblemSolvedResponse searchProblems(ProblemSolvedResponse response,
+                                                String title, Difficulty difficult,
+                                                Long contestId, Long categoryId, int page, int size) {
         if (!contestParticipantService.isUserJoinedContest(contestId, Objects.requireNonNull(SecurityService.getUserIdFromSecurityContext()).getId())){
             throw new ResourceNotFoundException(MESSAGE.HAVE_NOT_JOINED);
         }
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
         Page<Problem> problemPage = problemRepository.searchProblems(title, difficult,
                 categoryId,contestId, pageable);
-        return problemPage.map(this::exchangeEntity);
+        return ProblemSolvedResponse.builder()
+                .responseList(response.getResponseList())
+                .page(new CustomPageResponse<>(problemPage.map(this::exchangeEntity)))
+                .build();
     }
 
     @Override

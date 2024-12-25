@@ -22,6 +22,11 @@ public class SubmissionController {
             @PathVariable("id") Long id){
         return ResponseEntity.ok(this.submissionService.getRankingByContestId(id));
     }
+    @GetMapping("/problem/solved/{id}")
+    public ResponseEntity<?> filterProblemSolvedByContestId(
+            @PathVariable("id") Long id){
+        return ResponseEntity.ok(this.submissionService.getProblemsSolved(id));
+    }
     @GetMapping("/collect/user/{id}")
     public ResponseEntity<?> collectSubmissionByUsersId(
             @PathVariable("id") Long id){

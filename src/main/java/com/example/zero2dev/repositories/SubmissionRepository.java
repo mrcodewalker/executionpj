@@ -85,4 +85,34 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
             @Param("contestId") Long contestId,
             @Param("compilerVersion") String compilerVersion
     );
+    @Query(
+            value = """
+        SELECT DISTINCT s.id, 
+                        s.user_id, 
+                        s.problem_id, 
+                        c.source_code, 
+                        s.language_id, 
+                        s.`status`, 
+                        s.execution_time, 
+                        s.memory_used, 
+                        s.contest_id, 
+                        s.message, 
+                        s.failed_at, 
+                        s.total_test, 
+                        l.name, 
+                        l.`version`
+        FROM submission s
+        JOIN code_storage c 
+            ON c.user_id = s.user_id
+        JOIN language l 
+            ON l.id = s.language_id
+        WHERE s.user_id = :userId 
+          AND s.contest_id = :contestId
+    """,
+            nativeQuery = true
+    )
+    List<Object[]> getProblemSolved(
+            @Param("userId") Long userId,
+            @Param("contestId") Long contestId
+    );
 }

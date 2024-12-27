@@ -106,6 +106,7 @@ public class WebSecurityConfig {
                                 .requestMatchers("/api/v1/role/delete/**").hasAnyRole(Role.adminAccess())
 //                              SUBMISSION
                                 .requestMatchers("/api/v1/submission/create").hasAnyRole(Role.fullRoleAccess())
+                                .requestMatchers("/api/v1/submission/filter/ranking").hasAnyRole(Role.fullRoleAccess())
                                 .requestMatchers("/api/v1/submission/problem/solved/**").hasAnyRole(Role.fullRoleAccess())
                                 .requestMatchers("/api/v1/submission/ranking/contest/**").hasAnyRole(Role.fullRoleAccess())
                                 .requestMatchers("/api/v1/submission/collect/user/**").hasAnyRole(Role.fullRoleAccess())

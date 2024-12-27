@@ -1,8 +1,11 @@
 package com.example.zero2dev.repositories;
 
 import com.example.zero2dev.dtos.SubmissionDTO;
+import com.example.zero2dev.dtos.UserRankingDTO;
 import com.example.zero2dev.models.Submission;
 import com.example.zero2dev.storage.SubmissionStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -115,4 +118,37 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
             @Param("userId") Long userId,
             @Param("contestId") Long contestId
     );
+    @Query(value = """
+            WITH RankedUsers AS (
+                SELECT 
+                    RANK() OVER (ORDER BY SUM(p.points) DESC, SUM(s.execution_time), SUM(s.memory_used) ASC) AS ranking,
+                    s.user_id AS userId,
+                    u.username AS username,
+                    u.avatar_url AS avatarUrl,
+                    SUM(s.execution_time) AS totalExecutionTime,
+                    SUM(s.memory_used) AS totalMemoryUsed,
+                    SUM(p.points) AS totalPoints
+                FROM 
+                    submission s
+                JOIN 
+                    problem p ON p.id = s.problem_id
+                JOIN 
+                    user u ON u.id = s.user_id
+                WHERE 
+                    s.status = 'ACCEPTED'
+                GROUP BY 
+                    s.user_id, u.username
+            )
+            SELECT * FROM RankedUsers
+            ORDER BY ranking
+            LIMIT :limit OFFSET :offset
+            """, nativeQuery = true)
+    List<Object[]> findUserRankings(@Param("limit") int limit, @Param("offset") int offset);
+
+    @Query(value = """
+            SELECT COUNT(DISTINCT s.user_id)
+            FROM submission s
+            WHERE s.status = 'ACCEPTED'
+            """, nativeQuery = true)
+    long countUserRankings();
 }

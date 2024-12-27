@@ -1,9 +1,11 @@
 package com.example.zero2dev.controllers;
 
 import com.example.zero2dev.dtos.SubmissionDTO;
+import com.example.zero2dev.dtos.UserRankingDTO;
 import com.example.zero2dev.models.Submission;
 import com.example.zero2dev.services.SubmissionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +18,13 @@ public class SubmissionController {
     public ResponseEntity<?> createSubmission(
             @RequestBody SubmissionDTO submissionDTO){
         return ResponseEntity.ok(this.submissionService.createSubmission(submissionDTO));
+    }
+    @GetMapping("/filter/ranking")
+    public ResponseEntity<?> getRankings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<UserRankingDTO> rankings = submissionService.getUserRankings(page, size);
+        return ResponseEntity.ok(rankings);
     }
     @GetMapping("/ranking/contest/{id}")
     public ResponseEntity<?> filterByContestId(

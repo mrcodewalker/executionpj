@@ -1,10 +1,7 @@
 package com.example.zero2dev.services;
 
 import com.example.zero2dev.controllers.SubmissionController;
-import com.example.zero2dev.dtos.CodeStorageDTO;
-import com.example.zero2dev.dtos.CompileCodeDTO;
-import com.example.zero2dev.dtos.MappingDataSubmission;
-import com.example.zero2dev.dtos.SubmissionDTO;
+import com.example.zero2dev.dtos.*;
 import com.example.zero2dev.exceptions.ResourceNotFoundException;
 import com.example.zero2dev.exceptions.ValueNotValidException;
 import com.example.zero2dev.interfaces.ISubmissionService;
@@ -16,6 +13,10 @@ import com.example.zero2dev.storage.CompilerVersion;
 import com.example.zero2dev.storage.MESSAGE;
 import com.example.zero2dev.storage.SubmissionStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -177,7 +178,27 @@ public class SubmissionService implements ISubmissionService {
                 })
                 .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION));
     }
+    public Page<UserRankingDTO> getUserRankings(int page, int size) {
+        long total = submissionRepository.countUserRankings();
 
+        int offset = page * size;
+
+        List<Object[]> results = submissionRepository.findUserRankings(size, offset);
+
+        List<UserRankingDTO> dtos = results.stream()
+                .map(row -> UserRankingDTO.builder()
+                        .ranking(((Number) row[0]).longValue())
+                        .userId(((Number) row[1]).longValue())
+                        .username((String) row[2])
+                        .avatarUrl((String) row[3])
+                        .totalExecutionTime(((Number) row[4]).longValue())
+                        .totalMemoryUsed(((Number) row[5]).longValue())
+                        .totalPoints(((Number) row[6]).longValue())
+                        .build())
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(dtos, PageRequest.of(page, size), total);
+    }
     @Override
     public SubmissionResponse getSubmissionByUserIdAndProblemId(Long userId, Long problemId) {
         SecurityService.validateUserIdExceptAdmin(userId);

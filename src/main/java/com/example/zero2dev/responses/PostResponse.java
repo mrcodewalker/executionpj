@@ -22,6 +22,7 @@ public class PostResponse {
     private Long viewCount;
     private Long likesCount;
     private Long commentCount;
+    private CommentResponse previewComment;
     private boolean isLiked;
     private LocalDateTime createdAt;
 }

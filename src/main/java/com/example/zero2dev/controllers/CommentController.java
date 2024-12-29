@@ -35,4 +35,11 @@ public class CommentController {
     public ResponseEntity<?> getCommentByPostId(@RequestParam("id") Long id){
         return ResponseEntity.ok(this.commentService.getListComment(id));
     }
+    @GetMapping("/paging")
+    public ResponseEntity<?> getPagingComment(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "5") int size,
+            @RequestParam("postId") Long postId){
+        return ResponseEntity.ok(this.commentService.getPageComment(postId,page,size));
+    }
 }

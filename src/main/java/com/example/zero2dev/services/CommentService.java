@@ -12,6 +12,10 @@ import com.example.zero2dev.responses.CommentResponse;
 import com.example.zero2dev.responses.CustomPageResponse;
 import com.example.zero2dev.storage.MESSAGE;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
@@ -69,10 +73,16 @@ public class CommentService implements ICommentService {
     public List<CommentResponse> getListComment(Long postId) {
         return this.commentRepository.findByPostId(postId)
                 .stream()
-                .map(this::toResponse)
+                .map(CommentService::toResponse)
                 .toList();
     }
-    private CommentResponse toResponse(Comment comment){
+    public CustomPageResponse<CommentResponse> getPageComment(Long postId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "updatedAt"));
+
+        Page<Comment> commentPage = this.commentRepository.findByPostIdAndIsActiveTrue(postId, pageable);
+        return new CustomPageResponse<>(commentPage.map(CommentService::toResponse));
+    }
+    public static CommentResponse toResponse(Comment comment){
         return CommentResponse.builder()
                 .id(comment.getId())
                 .author(comment.getUser().getUsername())

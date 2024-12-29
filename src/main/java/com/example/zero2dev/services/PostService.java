@@ -16,9 +16,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -76,18 +78,19 @@ public class PostService implements IPostService {
 
     @Override
     public CustomPageResponse<PostResponse> getPostByPage(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
         Page<Post> postPage = this.postRepository.findAllActive(pageable);
         return new CustomPageResponse<>(postPage.map(this::toResponse));
     }
     private PostResponse toResponse(Post post){
         List<Like> likes = post.getLikes();
+        List<Comment> comments = post.getComments();
         String username = this.getCurrentUserName();
         return PostResponse.builder()
                 .id(post.getId())
                 .status(post.getStatus())
                 .author(post.getUser().getUsername())
-                .commentCount((long) post.getComments().stream()
+                .commentCount((long) comments.stream()
                         .filter(Comment::getIsActive)
                         .toList().size())
                 .content(post.getContent())
@@ -98,6 +101,12 @@ public class PostService implements IPostService {
                 .isLiked(likes.stream()
                         .anyMatch(like -> like.getIsActive() && like.getUser().getUsername().equals(username)))
                 .viewCount(post.getViewCount())
+                .previewComment(comments.stream()
+                        .filter(Comment::getIsActive)
+                        .sorted(Comparator.comparing(Comment::getUpdatedAt).reversed())
+                        .map(CommentService::toResponse)
+                        .findFirst()
+                        .orElse(null))
                 .createdAt(post.getCreatedAt())
                 .build();
     }

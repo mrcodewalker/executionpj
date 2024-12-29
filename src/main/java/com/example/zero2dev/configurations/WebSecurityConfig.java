@@ -129,6 +129,7 @@ public class WebSecurityConfig {
                                 .requestMatchers("/api/v1/comment/delete/**").hasAnyRole(Role.fullRoleAccess())
                                 .requestMatchers("/api/v1/comment/filter/**").hasAnyRole(Role.fullRoleAccess())
                                 .requestMatchers("/api/v1/comment/filter").hasAnyRole(Role.fullRoleAccess())
+                                .requestMatchers("/api/v1/comment/paging").hasAnyRole(Role.fullRoleAccess())
 //                              LIKE
                                 .requestMatchers("/api/v1/like/toggle").hasAnyRole(Role.fullRoleAccess())
 //                              TEST CASE READER

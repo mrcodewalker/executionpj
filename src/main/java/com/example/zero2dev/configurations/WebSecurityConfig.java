@@ -117,6 +117,20 @@ public class WebSecurityConfig {
                                 .requestMatchers("/api/v1/submission/collect/memory/lowest").hasAnyRole(Role.developerAccess())
                                 .requestMatchers("/api/v1/submission/collect/exec_time/lowest").hasAnyRole(Role.developerAccess())
                                 .requestMatchers("/api/v1/submission/delete/**").hasAnyRole(Role.adminAccess())
+//                              POST
+                                .requestMatchers("/api/v1/post/create").hasAnyRole(Role.fullRoleAccess())
+                                .requestMatchers("/api/v1/post/update/**").hasAnyRole(Role.fullRoleAccess())
+                                .requestMatchers("/api/v1/post/delete/**").hasAnyRole(Role.fullRoleAccess())
+                                .requestMatchers("/api/v1/post/filter/**").hasAnyRole(Role.fullRoleAccess())
+                                .requestMatchers("/api/v1/post/filter").hasAnyRole(Role.fullRoleAccess())
+//                              COMMENT
+                                .requestMatchers("/api/v1/comment/create").hasAnyRole(Role.fullRoleAccess())
+                                .requestMatchers("/api/v1/comment/update/**").hasAnyRole(Role.fullRoleAccess())
+                                .requestMatchers("/api/v1/comment/delete/**").hasAnyRole(Role.fullRoleAccess())
+                                .requestMatchers("/api/v1/comment/filter/**").hasAnyRole(Role.fullRoleAccess())
+                                .requestMatchers("/api/v1/comment/filter").hasAnyRole(Role.fullRoleAccess())
+//                              LIKE
+                                .requestMatchers("/api/v1/like/toggle").hasAnyRole(Role.fullRoleAccess())
 //                              TEST CASE READER
                                 .requestMatchers("/api/v1/test_case/create").hasAnyRole(Role.developerAccess())
                                 .requestMatchers("/api/v1/test_case/problem").hasAnyRole(Role.developerAccess())

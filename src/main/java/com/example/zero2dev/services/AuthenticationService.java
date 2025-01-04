@@ -8,6 +8,8 @@ import com.example.zero2dev.filter.JwtTokenProvider;
 import com.example.zero2dev.interfaces.IAuthenticationService;
 import com.example.zero2dev.models.*;
 import com.example.zero2dev.repositories.RefreshTokenRepository;
+import com.example.zero2dev.repositories.TokenRepository;
+import com.example.zero2dev.repositories.UserSessionRepository;
 import com.example.zero2dev.responses.AuthenticationResponse;
 import com.example.zero2dev.responses.RefreshTokenResponse;
 import com.example.zero2dev.storage.BlacklistReason;
@@ -38,6 +40,8 @@ public class AuthenticationService implements IAuthenticationService {
     private final BlacklistedTokenService blacklistedTokenService;
     private final UserSessionService userSessionService;
     private final SecurityService securityService;
+    private final TokenRepository tokenRepository;
+    private final UserSessionRepository userSessionRepository;
     @Override
     public AuthenticationResponse login(UserSession userSession, User user) {
         if (user==null){
@@ -56,12 +60,19 @@ public class AuthenticationService implements IAuthenticationService {
     }
     @Override
     public AuthenticationResponse refreshToken(String refreshToken, HttpServletRequest request) {
-        User user = SecurityService.getUserIdFromSecurityContext();
-        if (user == null){
-            throw new ValueNotValidException(MESSAGE.FORBIDDEN_REQUEST);
-        }
-        RefreshToken token = this.refreshTokenRepository.findByUser(user)
+        String sessionId = securityService.getSessionId();
+        UserSession userSession = this.userSessionService.getSessionBySessionId(sessionId);
+        Token accessToken = this.getToken(userSession.getUserId());
+        RefreshToken token = this.refreshTokenRepository.findByUserId(userSession.getUserId())
                 .orElseThrow(() -> new ValueNotValidException(MESSAGE.REFRESH_TOKEN_EXPIRED));
+        if (accessToken.isExpired()){
+            this.tokenService.revokeAllUserTokens(userSession.getUserId());
+            token.setRevoked(true);
+            this.refreshTokenRepository.save(token);
+            userSession.setIsActive(false);
+            this.userSessionRepository.save(userSession);
+            throw new ResourceNotFoundException(MESSAGE.ACCESS_DENIED);
+        }
         if (!this.validateRefreshToken(refreshToken, token)
                 || token.isRevoked()){
             throw new ValueNotValidException(MESSAGE.GENERAL_ERROR);
@@ -74,11 +85,15 @@ public class AuthenticationService implements IAuthenticationService {
         }
         UserSessionDTO userSessionDTO = UserSessionDTO.builder()
                 .isActive(true)
-                .userId(user.getId())
-                .sessionId(userSessionService.generateSecureSessionId(user.getId()))
+                .userId(userSession.getUserId())
+                .sessionId(userSessionService.generateSecureSessionId(userSession.getUserId()))
                 .ipAddress(IpService.getClientIp(request))
                 .deviceInfo(IpService.generateDeviceInfoString(request))
                 .build();
+        User user = SecurityService.getUserIdFromSecurityContext();
+        if (user == null){
+            throw new ValueNotValidException(MESSAGE.FORBIDDEN_REQUEST);
+        }
         UserSession session = userSessionService.createSession(userSessionDTO, user);
         String newAccessToken = jwtService.generateToken(session, user);
         Token newToken = tokenService.createAccessToken(user, newAccessToken);
@@ -90,14 +105,13 @@ public class AuthenticationService implements IAuthenticationService {
                 .build();
     }
     @Override
-    public void logout(HttpServletRequest request) {
-        User user = SecurityService.getUserIdFromSecurityContext();
-        if (user==null){
-            throw new ValueNotValidException(MESSAGE.GENERAL_ERROR);
-        }
-        String sessionId = securityService.getSessionId();
-        this.userSessionService.invalidateSession(sessionId);
-        Optional<RefreshToken> refreshTokenOptional = refreshTokenRepository.findByUser(user);
+    public void logout(String sessionId, HttpServletRequest request) {
+//        User user = SecurityService.getUserIdFromSecurityContext();
+//        if (user==null){
+//            throw new ValueNotValidException(MESSAGE.GENERAL_ERROR);
+//        }
+        Long userId = this.userSessionService.invalidateSession(sessionId);
+        Optional<RefreshToken> refreshTokenOptional = refreshTokenRepository.findByUserId(userId);
         BlacklistedTokenDTO blacklistedTokenDTO = BlacklistedTokenDTO.builder()
                 .ipAddress(IpService.getClientIp(request))
                 .reason(BlacklistReason.USER_LOGOUT)
@@ -108,14 +122,14 @@ public class AuthenticationService implements IAuthenticationService {
             refreshToken.setRevoked(true);
             blacklistedTokenDTO.setToken(refreshToken.getToken());
             refreshTokenRepository.save(refreshToken);
+            this.blacklistedTokenService.createNewRecord(blacklistedTokenDTO, refreshToken.getUser().getUsername());
         });
-        List<Token> tokens = tokenService.revokeAllUserTokens(user);
-        this.blacklistedTokenService.createNewRecord(blacklistedTokenDTO);
+        List<Token> tokens = tokenService.revokeAllUserTokens(userId);
         List<BlacklistedToken> list = new ArrayList<>();
         for (Token token : tokens){
             blacklistedTokenDTO.setToken(token.getToken());
             blacklistedTokenDTO.setTokenType(token.getTokenType());
-            list.add(blacklistedTokenService.exchangeEntity(blacklistedTokenDTO, user.getUsername()));
+            list.add(blacklistedTokenService.exchangeEntity(blacklistedTokenDTO, token.getUser().getUsername()));
         }
         this.blacklistedTokenService.saveAllData(list);
     }
@@ -144,5 +158,9 @@ public class AuthenticationService implements IAuthenticationService {
                 .updatedAt(refreshToken.getUpdatedAt())
                 .token(refreshToken.getToken())
                 .build();
+    }
+    private Token getToken(Long userId){
+        return this.tokenRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.IP_BLACKLISTED));
     }
 }

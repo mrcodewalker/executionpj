@@ -9,6 +9,6 @@ import jakarta.servlet.http.HttpServletRequest;
 public interface IAuthenticationService {
     AuthenticationResponse login(UserSession userSession, User user);
     AuthenticationResponse refreshToken(String refreshToken, HttpServletRequest request);
-    void logout(HttpServletRequest request);
+    void logout(String sessionId, HttpServletRequest request);
     boolean validateRefreshToken(String rawToken, RefreshToken storedToken);
 }

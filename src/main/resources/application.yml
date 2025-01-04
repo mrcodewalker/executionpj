@@ -35,9 +35,22 @@ zero2dev:
   max_session_exists: 1
   time_back_track: 1
   max_failed_login: 5
-  access_token_expired_after: 4
+  access_token_expired_after: 30
   refresh_token_expired_after: 7
   unban_after_hour: 1
   username: "admin"
   timeout: 5000
   verify_url: ${VERIFY_URL}
+  img_path: ${IMG_PATH}
+  banner_path: ${BANNER_PATH}
+  font_path: ${FONT_BATH}
+certificate:
+  keystore:
+    path: ${KEY_STORE_PATH}
+    password: ${KEY_STORE_PASSWORD}
+  key:
+    alias: ${KEY_ALIAS}
+    password: ${KEY_PASSWORD}
+jasperreports:
+  fonts:
+    dir: classpath:/fonts

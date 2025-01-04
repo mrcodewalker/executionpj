@@ -151,4 +151,46 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
             WHERE s.status = 'ACCEPTED'
             """, nativeQuery = true)
     long countUserRankings();
+
+    @Query(value = "SELECT " +
+            "COUNT(l.name) AS language_count, " +
+            "l.name, " +
+            "l.version, " +
+            "u.full_name, " +
+            "(SELECT COUNT(*) " +
+            " FROM submission ss " +
+            " WHERE ss.user_id = :userId " +
+            " AND ss.contest_id = :contestId " +
+            " AND ss.status = 'ACCEPTED' " +
+            " AND ss.language_id IN (SELECT id FROM `language` WHERE is_active = TRUE)) AS total_solved, " +
+            "(SELECT COUNT(DISTINCT p.id) " +
+            " FROM problem p " +
+            " WHERE p.contest_id = :contestId) = " +
+            "(SELECT COUNT(DISTINCT s.problem_id) " +
+            " FROM submission s " +
+            " WHERE s.status = 'ACCEPTED' " +
+            " AND s.user_id = :userId " +
+            " AND s.contest_id = :contestId) AS completed_all_problems, " +
+            "c.title AS contest_title, " +
+            "RANK() OVER (PARTITION BY s.contest_id ORDER BY COUNT(s.id) DESC, SUM(s.execution_time), SUM(s.memory_used)) AS rank_in_contest, " +
+            "(SELECT COUNT(*) FROM problem p WHERE p.contest_id = :contestId AND p.is_active = TRUE) AS total " +
+            "FROM submission s " +
+            "JOIN `language` l ON l.id = s.language_id " +
+            "JOIN problem p ON p.id = s.problem_id " +
+            "JOIN contest c ON c.id = s.contest_id " +
+            "JOIN user u ON u.id = :userId " +
+            "WHERE s.status = 'ACCEPTED' " +
+            "AND s.user_id = :userId " +
+            "AND s.contest_id = :contestId " +
+            "AND l.is_active = TRUE " +
+            "AND (SELECT COUNT(*) FROM problem p WHERE p.contest_id = :contestId AND p.is_active = TRUE) != 0 " +
+            "AND (SELECT COUNT(*) FROM problem p WHERE p.contest_id = :contestId AND p.is_active = TRUE) >= " +
+            "(SELECT COUNT(*) FROM submission ss WHERE ss.user_id = :userId " +
+            "AND ss.contest_id = :contestId " +
+            "AND ss.status = 'ACCEPTED' " +
+            "AND ss.language_id IN (SELECT id FROM `language` WHERE is_active = TRUE)) " +
+            "GROUP BY l.name, l.version, c.title " +
+            "ORDER BY COUNT(l.name) DESC, MAX(s.execution_time), MAX(s.memory_used) ASC " +
+            "LIMIT 1", nativeQuery = true)
+    List<Object[]> findContestStats(@Param("userId") Long userId, @Param("contestId") Long contestId);
 }

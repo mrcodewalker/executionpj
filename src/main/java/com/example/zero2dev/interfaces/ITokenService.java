@@ -12,7 +12,7 @@ import java.util.List;
 public interface ITokenService {
     Token createAccessToken(User user, String jwtToken);
     RefreshToken createRefreshToken(User user);
-    List<Token> revokeAllUserTokens(User user);
+    List<Token> revokeAllUserTokens(Long userId);
     boolean validateToken(String token, TokenType tokenType);
     List<TokenResponse> filterToken();
 }

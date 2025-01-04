@@ -39,4 +39,8 @@ public class MESSAGE {
     public static final String TOKEN_INVALID = "The token is invalid. Please check your credentials and try again.";
     public static final String USER_JOINED = "Your account has already joined the contest. Please join the contest to participate!";
     public static final String HAVE_NOT_JOINED = "Please join the contest!";
+    public static final String FRAME_EXITS = "Default frame already exists";
+    public static final String FRAME_NOT_FOUND = "Frame not found!";
+    public static final String FRAME_OWNED = "You have been owned frame!";
+    public static final String FRAME_NOT_OWNED = "You have not been owned frame!";
 }

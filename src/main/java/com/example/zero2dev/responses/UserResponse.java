@@ -16,6 +16,7 @@ public class UserResponse {
     private String fullName;
     private String avatarUrl;
     private String role;
+    private String sessionId;
     @JsonProperty("token")
     private AuthenticationResponse authenticationResponse;
 }

@@ -75,8 +75,8 @@ public class TokenService implements ITokenService {
     }
 
     @Override
-    public List<Token> revokeAllUserTokens(User user) {
-        List<Token> validTokens = tokenRepository.findAllValidTokensByUser(user.getId());
+    public List<Token> revokeAllUserTokens(Long userId) {
+        List<Token> validTokens = tokenRepository.findAllValidTokensByUser(userId);
 
         validTokens.forEach(token -> {
             token.setRevoked(true);

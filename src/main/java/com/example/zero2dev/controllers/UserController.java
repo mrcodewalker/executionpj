@@ -3,24 +3,39 @@ package com.example.zero2dev.controllers;
 import com.example.zero2dev.dtos.LoginDTO;
 import com.example.zero2dev.dtos.UpdateUserDTO;
 import com.example.zero2dev.dtos.UserDTO;
+import com.example.zero2dev.mapper.FrameMapper;
+import com.example.zero2dev.services.FrameService;
 import com.example.zero2dev.services.UserService;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.PreparedStatement;
 
 @RestController
 @RequestMapping("/api/v1/user")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
 public class UserController {
-    private final UserService userService;
+    private UserService userService;
+    private String uploadDir = "C:\\Users\\ADMIN\\Zero2Dev\\zero2dev\\src\\main\\resources\\images";
+    private UserController(UserService userService,
+                            @Value("${zero2dev.img_path}") String uploadDir){
+        this.userService = userService;
+        this.uploadDir = uploadDir;
+    }
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestParam String token, @RequestParam String newPassword) {
         this.userService.resetPassword(token, newPassword);
@@ -115,5 +130,38 @@ public class UserController {
     public ResponseEntity<?> filterByUserName(
             @RequestParam("username") String username){
         return ResponseEntity.ok(this.userService.getUserByMatchUserName(username));
+    }
+    @GetMapping("/image/{fileName}")
+    public ResponseEntity<Resource> getImage(@PathVariable String fileName) {
+        Path filePath = Paths.get(this.uploadDir, fileName);
+        Resource resource = new FileSystemResource(filePath.toFile());
+
+        if (!resource.exists()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String contentType;
+        try {
+            contentType = Files.probeContentType(filePath);
+        } catch (IOException e) {
+            contentType = "application/octet-stream";
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                .body(resource);
+    }
+
+    private String determineContentType(String fileName) {
+        if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) {
+            return "image/jpeg";
+        } else if (fileName.endsWith(".png")) {
+            return "image/png";
+        } else if (fileName.endsWith(".gif")) {
+            return "image/gif";
+        } else {
+            return "application/octet-stream";
+        }
     }
 }

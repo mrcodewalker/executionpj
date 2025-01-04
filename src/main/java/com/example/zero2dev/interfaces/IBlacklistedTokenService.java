@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface IBlacklistedTokenService {
-    BlacklistedToken createNewRecord(BlacklistedTokenDTO blacklistedTokenDTO);
+    BlacklistedToken createNewRecord(BlacklistedTokenDTO blacklistedTokenDTO, String username);
     boolean isTokenBlacklisted(String token);
     Optional<BlacklistedToken> getBlacklistedTokenDetails(String token);
     List<BlacklistedToken> getUserBlacklistedTokens(String username);

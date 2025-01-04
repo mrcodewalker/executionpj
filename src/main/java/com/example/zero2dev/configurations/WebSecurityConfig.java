@@ -37,9 +37,23 @@ public class WebSecurityConfig {
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
+//                                CERTIFICATE
+                                .requestMatchers("/api/v1/certificate/**").hasAnyRole(Role.fullRoleAccess())
+//                                FRAME
+                                .requestMatchers("/api/v1/frame/create").hasRole(Role.adminAccess())
+                                .requestMatchers("/api/v1/frame/**").hasRole(Role.adminAccess())
+                                .requestMatchers("/api/v1/frame/assign/**").hasRole(Role.adminAccess())
+                                .requestMatchers("/api/v1/frame/toggle/**").hasRole(Role.adminAccess())
+                                .requestMatchers("/api/v1/frame/apply").hasAnyRole(Role.fullRoleAccess())
+                                .requestMatchers("/api/v1/frame/active").hasAnyRole(Role.fullRoleAccess())
+                                .requestMatchers("/api/v1/frame/purchase").hasAnyRole(Role.fullRoleAccess())
+                                .requestMatchers("/api/v1/frame/filter").hasAnyRole(Role.fullRoleAccess())
+                                .requestMatchers("/api/v1/frame/image/**").permitAll()
 //                                TOKEN
                                 .requestMatchers("/api/v1/auth/verify").permitAll()
+                                .requestMatchers("/api/v1/auth/logout").permitAll()
                                 .requestMatchers("/api/v1/user/verify").permitAll()
+                                .requestMatchers("/api/v1/user/image/**").permitAll()
                                 .requestMatchers("/api/v1/user/forgot-password").permitAll()
                                 .requestMatchers("/api/v1/user/reset-password").permitAll()
                                 .requestMatchers("/api/v1/token/filter").hasRole(Role.adminAccess())

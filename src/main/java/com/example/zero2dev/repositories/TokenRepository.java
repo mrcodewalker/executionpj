@@ -18,4 +18,6 @@ public interface TokenRepository extends JpaRepository<Token, Long> {
 
     Optional<Token> findByToken(String token);
     Optional<Token> findByUserAndTokenType(User user, TokenType tokenType);
+    @Query("SELECT t FROM Token t WHERE t.user.id = :userId")
+    Optional<Token> findByUserId(@Param("userId") Long userId);
 }

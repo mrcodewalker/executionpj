@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fontFamilies>
+    <fontFamily name="Monotype Corsiva">
+        <normal>fonts/Monotype-Corsiva-Regular.ttf</normal>
+        <bold>fonts/Monotype-Corsiva-Bold.ttf</bold>
+        <italic>fonts/Monotype-Corsiva-Regular-Italic.ttf</italic>
+        <boldItalic>fonts/Monotype-Corsiva-Bold-Italic.ttf</boldItalic>
+        <pdfEncoding>Identity-H</pdfEncoding>
+        <pdfEmbedded>true</pdfEmbedded>
+    </fontFamily>
+    <fontFamily name="Arial">
+        <normal>fonts/Arial.ttf</normal>
+        <bold>fonts/ArialBD.ttf</bold>
+        <italic>fonts/ArialCEItalic.ttf</italic>
+        <boldItalic>fonts/ArialCEBoldItalic.ttf</boldItalic>
+        <pdfEncoding>Identity-H</pdfEncoding>
+        <pdfEmbedded>true</pdfEmbedded>
+    </fontFamily>
+</fontFamilies>

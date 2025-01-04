@@ -20,12 +20,8 @@ import java.util.Optional;
 public class BlacklistedTokenService implements IBlacklistedTokenService {
     private final BlacklistedTokenRepository blacklistedTokenRepository;
     @Override
-    public BlacklistedToken createNewRecord(BlacklistedTokenDTO blacklistedTokenDTO) {
-        User user = SecurityService.getUserIdFromSecurityContext();
-        if (user==null){
-            throw new ValueNotValidException(MESSAGE.FORBIDDEN_REQUEST);
-        }
-        return this.blacklistedTokenRepository.save(this.exchangeEntity(blacklistedTokenDTO, user.getUsername()));
+    public BlacklistedToken createNewRecord(BlacklistedTokenDTO blacklistedTokenDTO, String userName) {
+        return this.blacklistedTokenRepository.save(this.exchangeEntity(blacklistedTokenDTO, userName));
     }
     @Override
     public boolean isTokenBlacklisted(String token) {

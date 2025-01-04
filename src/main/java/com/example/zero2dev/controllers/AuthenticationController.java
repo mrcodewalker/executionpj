@@ -24,8 +24,10 @@ public class AuthenticationController {
         return ResponseEntity.ok(this.authenticationService.refreshToken(refreshTokenDTO.getRefreshToken(), request));
     }
     @PostMapping("/logout")
-    public ResponseEntity<?> logoutUser(HttpServletRequest request){
-        authenticationService.logout(request);
+    public ResponseEntity<?> logoutUser(
+            @RequestParam("sessionId") String sessionId,
+            HttpServletRequest request){
+        authenticationService.logout(sessionId, request);
         return ResponseEntity.ok(HttpStatus.ACCEPTED);
     }
 }

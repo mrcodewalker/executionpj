@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="Certificate" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="842" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0">
+
+    <!-- Định nghĩa các tham số -->
+    <parameter name="studentName" class="java.lang.String"/>
+    <parameter name="contestName" class="java.lang.String"/>
+    <parameter name="completedTasks" class="java.lang.Long"/>
+    <parameter name="ranking" class="java.lang.Long"/>
+    <parameter name="signatureName1" class="java.lang.String"/>
+    <parameter name="signatureName2" class="java.lang.String"/>
+    <parameter name="signatureDate1" class="java.lang.String"/>
+    <parameter name="signatureDate2" class="java.lang.String"/>
+    <parameter name="signer1Reason" class="java.lang.String"/>
+    <parameter name="signer2Reason" class="java.lang.String"/>
+    <parameter name="backgroundImage" class="java.lang.String"/>
+    <parameter name="congratulationsMessage" class="java.lang.String"/>
+
+    <background>
+        <band height="595" splitType="Stretch">
+            <image scaleImage="FillFrame">
+                <reportElement x="0" y="0" width="842" height="595"/>
+                <imageExpression><![CDATA[$P{backgroundImage}]]></imageExpression>
+            </image>
+        </band>
+    </background>
+
+    <title>
+        <band height="595" splitType="Stretch">
+            <!-- Tên học viên -->
+            <textField>
+                <reportElement x="150" y="275" width="542" height="100" forecolor="#FFD700"/>
+                <textElement textAlignment="Center">
+                    <font fontName="Monotype Corsiva" size="60" pdfFontName="Monotype Corsiva" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$P{studentName}]]></textFieldExpression>
+            </textField>
+            <textField textAdjust="StretchHeight">
+                <reportElement x="150" y="355" width="542" height="80" forecolor="#FFFFFF"/>
+                <textElement textAlignment="Center" markup="html">
+                    <font fontName="Arial" size="20"/>
+                </textElement>
+                <textFieldExpression><![CDATA[
+                    $P{congratulationsMessage}
+                        .replaceAll("(\\d+(?:st|nd|rd|th))", "<font color='#FF69B4'><b>$1</b></font>")
+                        .replaceAll("(" + $P{contestName} + ")", "<font color='#FFD700'><b>$1</b></font>")
+                        .replaceAll("(\\d+ (?:tasks|problems|challenges))", "<font color='#00FF00'><b>$1</b></font>")
+                ]]></textFieldExpression>
+            </textField>
+
+            <!-- Chữ ký điện tử -->
+            <textField textAdjust="StretchHeight">
+                <reportElement x="130" y="480" width="200" height="60" forecolor="#FFFFFF"/>
+                <textElement textAlignment="Center">
+                    <font fontName="Arial" size="10"/>
+                </textElement>
+                <textFieldExpression><![CDATA["Digitally signed by: " + $P{signatureName1} + "\n" +
+                              "Date: " + $P{signatureDate1} + "\n" +
+                              "Reason: " + $P{signer1Reason}]]></textFieldExpression>
+            </textField>
+            <textField textAdjust="StretchHeight">
+                <reportElement x="510" y="480" width="200" height="60" forecolor="#FFFFFF"/>
+                <textElement textAlignment="Center">
+                    <font fontName="Arial" size="10"/>
+                </textElement>
+                <textFieldExpression><![CDATA["Digitally signed by: " + $P{signatureName2} + "\n" +
+                              "Date: " + $P{signatureDate2} + "\n" +
+                              "Reason: " + $P{signer2Reason}]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+</jasperReport>

@@ -43,6 +43,37 @@ public class SubmissionService implements ISubmissionService {
     private final CompileCodeService compileCodeService;
     private final ContestParticipantService contestParticipantService;
     private final TestCasesService testCasesService;
+    public CertificateResponse getCertificateResponse(Long contestId){
+        User user = SecurityService.getUserIdFromSecurityContext();
+        if (user==null){
+            throw new ResourceNotFoundException(MESSAGE.IP_BLACKLISTED);
+        }
+        List<Object[]> results = submissionRepository.findContestStats(user.getId(), contestId);
+        if (!results.isEmpty()) {
+            for (Object[] row : results) {
+                Long languageCount = (Long) row[0];
+                String languageName = (String) row[1];
+                String languageVersion = (String) row[2];
+                String fullName = (String) row[3];
+                Long totalSolved = (Long) row[4];
+                boolean completedAllProblems = row[5] != null && ((Integer) row[5] == 1);                String contestTitle = (String) row[6];
+                Long rankInContest = (Long) row[7];
+                Long total = (Long) row[8];
+                return CertificateResponse.builder()
+                        .completedAllProblems(completedAllProblems)
+                        .languageCount(languageCount)
+                        .languageVersion(languageVersion)
+                        .languageName(languageName)
+                        .fullName(fullName)
+                        .totalSolved(totalSolved)
+                        .contestTitle(contestTitle)
+                        .rankInContest(rankInContest)
+                        .total(total)
+                        .build();
+            }
+        }
+        return null;
+    }
     @Override
     public SubmissionResponse createSubmission(SubmissionDTO submissionDTO) {
         Long userId = SecurityService.getUserIdByToken();

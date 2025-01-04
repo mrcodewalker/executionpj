@@ -2,9 +2,7 @@ package com.example.zero2dev.filter;
 
 import com.example.zero2dev.exceptions.ResourceNotFoundException;
 import com.example.zero2dev.models.User;
-import com.example.zero2dev.services.BlacklistedTokenService;
-import com.example.zero2dev.services.IPSecurityService;
-import com.example.zero2dev.services.TokenService;
+import com.example.zero2dev.services.*;
 import com.example.zero2dev.storage.MESSAGE;
 import com.example.zero2dev.storage.TokenType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,17 +31,20 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     private final TokenService tokenService;
     private final IPSecurityService ipSecurityService;
     private final BlacklistedTokenService blacklistedTokenService;
+    private final AuthenticationService authenticationService;
     private static final ObjectMapper objectMapper = new ObjectMapper();
     public JwtTokenFilter(JwtTokenProvider jwtTokenProvider,
                           UserDetailsService userDetailsService,
                           TokenService tokenService,
                           IPSecurityService ipSecurityService,
-                          BlacklistedTokenService blacklistedTokenService) {
+                          BlacklistedTokenService blacklistedTokenService,
+                          AuthenticationService authenticationService) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.userDetailsService = userDetailsService;
         this.tokenService = tokenService;
         this.ipSecurityService = ipSecurityService;
         this.blacklistedTokenService = blacklistedTokenService;
+        this.authenticationService = authenticationService;
     }
 
     @Override
@@ -78,6 +79,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             }
 
             if (!this.tokenService.validateToken(token, TokenType.ACCESS)) {
+                authenticationService.logout(this.jwtTokenProvider.getSessionIdFromToken(token), request);
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.getWriter().write(JwtTokenFilter.createJsonResponse(401, MESSAGE.TOKEN_INVALID));
                 return;
@@ -109,7 +111,10 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         final List<Pair<String,String>> byPassTokens = List.of(
                 Pair.of(String.format("%s/user/register", apiPrefix), "POST"),
                 Pair.of(String.format("%s/user/login", apiPrefix), "POST"),
+                Pair.of(String.format("%s/user/image", apiPrefix), "GET"),
                 Pair.of(String.format("%s/auth/verify", apiPrefix), "GET"),
+                Pair.of(String.format("%s/frame/image", apiPrefix), "GET"),
+                Pair.of(String.format("%s/auth/logout", apiPrefix), "POST"),
                 Pair.of(String.format("%s/user/verify", apiPrefix), "GET"),
                 Pair.of(String.format("%s/contest/filter/all", apiPrefix), "GET"),
                 Pair.of(String.format("%s/user/forgot-password", apiPrefix), "POST"),

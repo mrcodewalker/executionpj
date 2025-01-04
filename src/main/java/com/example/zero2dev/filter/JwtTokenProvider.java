@@ -4,6 +4,7 @@ import com.example.zero2dev.exceptions.ValueNotValidException;
 import com.example.zero2dev.models.User;
 import com.example.zero2dev.models.UserSession;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -126,6 +127,15 @@ public class JwtTokenProvider {
         return expirationDate.before(new Date());
 
     }
-
+    public String getSessionIdFromToken(String token) {
+        try {
+            Claims claims = extractClaims(token);
+            return claims != null ? (String) claims.get("sid") : null;
+        } catch (ExpiredJwtException e) {
+            return e.getClaims().get("sid", String.class);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }
 

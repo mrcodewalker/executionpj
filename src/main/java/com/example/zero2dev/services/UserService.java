@@ -259,6 +259,7 @@ public class UserService implements IUserService {
         response.setRole(user.getRole().getRoleName());
         loginDTO.setUsername(user.getUsername());
         response.setId(24112004+user.getId());
+        response.setSessionId(session.getSessionId());
         this.loginAttemptService.recordLoginAttempt(loginDTO, LoginStatus.SUCCESS, request);
         return response;
     }

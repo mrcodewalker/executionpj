@@ -125,11 +125,15 @@ public class UserSessionService implements IUserSessionService {
         ).orElse(false);
     }
 
-    public void invalidateSession(String sessionId) {
-        userSessionRepository.findBySessionId(sessionId)
-                .ifPresent(session -> {
-                    session.setIsActive(false);
-                    userSessionRepository.save(session);
-                });
+    public Long invalidateSession(String sessionId) {
+        Optional<UserSession> optionalUserSession = userSessionRepository.findBySessionId(sessionId);
+
+        if (optionalUserSession.isEmpty()) {
+            throw new ResourceNotFoundException(MESSAGE.IP_BLACKLISTED);
+        }
+        UserSession userSession = optionalUserSession.get();
+        userSession.setIsActive(false);
+        userSessionRepository.save(userSession);
+        return userSession.getUserId();
     }
 }

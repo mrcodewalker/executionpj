@@ -40,7 +40,7 @@
             <textField textAdjust="StretchHeight">
                 <reportElement x="150" y="355" width="542" height="80" forecolor="#FFFFFF"/>
                 <textElement textAlignment="Center" markup="html">
-                    <font fontName="Arial" size="20"/>
+                    <font fontName="Monotype Corsiva" size="23" pdfFontName="Monotype Corsiva" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
                 </textElement>
                 <textFieldExpression><![CDATA[
                     $P{congratulationsMessage}

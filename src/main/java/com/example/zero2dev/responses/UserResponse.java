@@ -17,6 +17,7 @@ public class UserResponse {
     private String avatarUrl;
     private String role;
     private String sessionId;
+    private Long gems;
     @JsonProperty("token")
     private AuthenticationResponse authenticationResponse;
 }

@@ -1,9 +1,6 @@
 package com.example.zero2dev.controllers;
 
-import com.example.zero2dev.dtos.CreateFrameRequest;
-import com.example.zero2dev.dtos.FrameDTO;
-import com.example.zero2dev.dtos.UpdateFrameRequest;
-import com.example.zero2dev.dtos.UserFrameDTO;
+import com.example.zero2dev.dtos.*;
 import com.example.zero2dev.exceptions.ResourceNotFoundException;
 import com.example.zero2dev.mapper.FrameMapper;
 import com.example.zero2dev.models.Frame;
@@ -94,11 +91,14 @@ public class FrameController {
         return ResponseEntity.ok(RestApiResponse.success(frameDTO));
     }
 
-    @PostMapping("/assign/{userId}")
+    @PostMapping("/assign")
     public ResponseEntity<?> assignFrameToUser(
-            @RequestParam("frameId") Long frameId,
-            @PathVariable Long userId) {
-        UserFrame userFrame = frameService.assignFrameToUser(userId, frameId);
+            @RequestParam("frameId") Long frameId) {
+        User user = SecurityService.getUserIdFromSecurityContext();
+        if (user==null){
+            throw new ResourceNotFoundException(MESSAGE.IP_BLACKLISTED);
+        }
+        UserFrame userFrame = frameService.assignFrameToUser(user.getId(), frameId);
         UserFrameDTO userFrameDTO = convertToUserFrameDTO(userFrame);
         return ResponseEntity.ok(RestApiResponse.success(userFrameDTO));
     }
@@ -151,9 +151,18 @@ public class FrameController {
         List<UserFrameDTO> userFrames = frameService.getUserFrames(user.getId());
         return ResponseEntity.ok(RestApiResponse.success(userFrames));
     }
+    @PostMapping("/current")
+    public ResponseEntity<?> getUserFrame() {
+        User user = SecurityService.getUserIdFromSecurityContext();
+        if (user==null){
+            throw new ResourceNotFoundException(MESSAGE.IP_BLACKLISTED);
+        }
+        FilterFrameDTO userFrames = frameService.getCurrentFrame(user.getId());
+        return ResponseEntity.ok(RestApiResponse.success(userFrames));
+    }
     @GetMapping("/filter")
     public ResponseEntity<?> getFilterFrames() {
-        List<FrameDTO> frameDTOS = frameService.getFilterList();
+        List<FilterFrameDTO> frameDTOS = frameService.getFilterList();
         return ResponseEntity.ok(RestApiResponse.success(frameDTOS));
     }
 
@@ -162,6 +171,8 @@ public class FrameController {
     }
 
     private UserFrameDTO convertToUserFrameDTO(UserFrame userFrame) {
-        return mapper.toDTO(userFrame);
+        UserFrameDTO userFrameDTO = mapper.toDTO(userFrame);
+        userFrameDTO.setUserId((long) 66771508);
+        return userFrameDTO;
     }
 }

@@ -1,15 +1,14 @@
 package com.example.zero2dev.services;
 
-import com.example.zero2dev.dtos.CreateFrameRequest;
-import com.example.zero2dev.dtos.FrameDTO;
-import com.example.zero2dev.dtos.UpdateFrameRequest;
-import com.example.zero2dev.dtos.UserFrameDTO;
+import com.example.zero2dev.dtos.*;
 import com.example.zero2dev.exceptions.ResourceNotFoundException;
 import com.example.zero2dev.mapper.FrameMapper;
 import com.example.zero2dev.models.Frame;
+import com.example.zero2dev.models.User;
 import com.example.zero2dev.models.UserFrame;
 import com.example.zero2dev.repositories.FrameRepository;
 import com.example.zero2dev.repositories.UserFrameRepository;
+import com.example.zero2dev.repositories.UserRepository;
 import com.example.zero2dev.storage.MESSAGE;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Filter;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,13 +28,15 @@ public class FrameService {
     private final FrameRepository frameRepository;
     private final UserFrameRepository userFrameRepository;
     private final FrameMapper mapper;
+    private final UserRepository userRepository;
 
     @Autowired
     public FrameService(FrameRepository frameRepository, UserFrameRepository userFrameRepository,
-                        FrameMapper mapper) {
+                        FrameMapper mapper, UserRepository userRepository) {
         this.frameRepository = frameRepository;
         this.userFrameRepository = userFrameRepository;
         this.mapper = mapper;
+        this.userRepository = userRepository;
     }
 
     public Frame createFrame(CreateFrameRequest request) {
@@ -50,7 +53,6 @@ public class FrameService {
     public UserFrameDTO purchaseFrame(Long userId, Long frameId) {
         Frame frame = frameRepository.findById(frameId)
                 .orElseThrow(() -> new ResourceNotFoundException("Frame not found"));
-
         if (userFrameRepository.findByUserIdAndFrameId(userId, frameId).isPresent()) {
             throw new ResourceNotFoundException(MESSAGE.FRAME_OWNED);
         }
@@ -62,6 +64,7 @@ public class FrameService {
         userFrame.setPurchaseDate(LocalDateTime.now());
 
         UserFrame savedUserFrame = userFrameRepository.save(userFrame);
+        userRepository.minusGemsToUser(userId, frame.getPrice());
         return convertToUserFrameDTO(savedUserFrame);
     }
     public UserFrameDTO getActiveFrame(Long userId) {
@@ -111,13 +114,11 @@ public class FrameService {
         Frame frame = frameRepository.findById(frameId)
                 .orElseThrow(() -> new ResourceNotFoundException(MESSAGE.FRAME_NOT_FOUND));
 
-        userFrameRepository.findByUserIdAndIsActiveTrue(userId)
-                .ifPresent(currentFrame -> {
-                    currentFrame.setIsActive(false);
-                    userFrameRepository.save(currentFrame);
-                });
+        userFrameRepository.setAllFramesInactiveForUser(userId);
 
-        UserFrame userFrame = new UserFrame();
+        UserFrame userFrame = userFrameRepository.findByUserIdAndFrameId(userId, frameId)
+                .orElse(new UserFrame());
+
         userFrame.setUserId(userId);
         userFrame.setFrame(frame);
         userFrame.setIsActive(true);
@@ -142,22 +143,69 @@ public class FrameService {
 
         userFrameRepository.save(userFrame);
     }
-    public List<FrameDTO> getFilterList(){
-        return frameRepository.findAll().stream()
-                .map(this::convertToFrameDTO)
-                .collect(Collectors.toList());
+    public List<FilterFrameDTO> getFilterList() {
+        User user = SecurityService.getUserIdFromSecurityContext();
+        if (user == null) {
+            throw new ResourceNotFoundException(MESSAGE.IP_BLACKLISTED);
+        }
+        List<Object[]> collectData = this.frameRepository.findAllFramesWithCurrentStatus(user.getId());
+        List<FilterFrameDTO> frames = mapToFilterFrameDTOList(collectData);
+
+        frames.sort((frame1, frame2) -> Boolean.compare(frame2.getIsOwned(), frame1.getIsOwned()));
+
+        return frames;
     }
 
+    public static List<FilterFrameDTO> mapToFilterFrameDTOList(List<Object[]> queryResults) {
+        return queryResults.stream().map(result -> {
+            FilterFrameDTO dto = new FilterFrameDTO();
+            dto.setFrameId(((Number) result[0]).longValue());
+            dto.setName((String) result[1]);
+            dto.setDescription((String) result[2]);
+            dto.setImageUrl((String) result[3]);
+            dto.setFrameType((String) result[4]);
+            dto.setCssAnimation((String) result[5]);
+            dto.setPrice(((Number) result[6]).longValue());
+            dto.setIsDefault((Boolean) result[7]);
+            dto.setGems(((Number) result[8]).longValue());
+            dto.setIsOwned(((Character) result[9]).equals('1'));
+            dto.setIsCurrent(((Character) result[10]).equals('1'));
+            return dto;
+        }).collect(Collectors.toList());
+    }
     public List<UserFrameDTO> getUserFrames(Long userId) {
         return userFrameRepository.findByUserId(userId).stream()
                 .map(this::convertToUserFrameDTO)
                 .collect(Collectors.toList());
     }
+    public FilterFrameDTO getCurrentFrame(Long userId) {
+        return userFrameRepository.findFrameDetailsByUsername(userId, true).stream()
+                .map(this::mapToFrameDTO)
+                .findFirst()
+                .orElse(null);
+    }
+
 
     private UserFrameDTO convertToUserFrameDTO(UserFrame userFrame) {
-        return mapper.toDTO(userFrame);
+        UserFrameDTO dto = mapper.toDTO(userFrame);
+        dto.setUserId((long) 66771508);
+        return dto;
     }
     private FrameDTO convertToFrameDTO(Frame frame){
         return mapper.toDTO(frame);
     }
+    private FilterFrameDTO mapToFrameDTO(Object[] row) {
+        FilterFrameDTO frameDTO = new FilterFrameDTO();
+        frameDTO.setFrameId((Long) row[0]);
+        frameDTO.setName((String) row[1]);
+        frameDTO.setDescription((String) row[2]);
+        frameDTO.setImageUrl((String) row[3]);
+        frameDTO.setFrameType((String) row[4]);
+        frameDTO.setCssAnimation((String) row[5]);
+        frameDTO.setPrice((Long) row[6]);
+        frameDTO.setIsDefault((Boolean) row[7]);
+
+        return frameDTO;
+    }
+
 }

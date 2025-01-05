@@ -51,6 +51,8 @@ public class User implements UserDetails {
     private Boolean isActive = true;
     @Column(name = "forgot")
     private String forgot;
+    @Column(name = "gems")
+    private Long gems;
     @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;

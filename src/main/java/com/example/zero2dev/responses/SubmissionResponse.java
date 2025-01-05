@@ -30,6 +30,7 @@ public class SubmissionResponse {
     private String compilerVersion;
     private String languageName;
     private boolean allTestPassed;
+    private Long gems;
     @JsonProperty("list_compile_code")
     private List<CompileCodeResponse> compileCodeResponses;
     public static SubmissionResponse exchangeEntity(Submission submission){

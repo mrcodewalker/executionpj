@@ -83,8 +83,11 @@ public class SubmissionService implements ISubmissionService {
         }
 
         Optional<Submission> existingSubmission = getLatestSubmissionValue(userId, submissionDTO.getProblemId(), submissionDTO.getContestId());
-
+        boolean checkExist = false;
         Submission submission = prepareSubmission(submissionDTO, existingSubmission);
+        if (submission.getId()!=null){
+            checkExist = true;
+        }
         CompileCodeDTO compileCodeDTO = buildCompileCodeDTO(submissionDTO, submission);
         if (compileCodeDTO.getTestCases().isEmpty()) {
             throw new ResourceNotFoundException(MESSAGE.VALUE_NOT_FOUND_EXCEPTION);
@@ -96,6 +99,10 @@ public class SubmissionService implements ISubmissionService {
         response.setCompileCodeResponses(compileCodeResponse.getCompileCodeResponses());
         if (submission.getStatus().equals(SubmissionStatus.ACCEPTED)) {
             codeStorageService.createCodeStorage(parseDTO(submission, submissionDTO.getSourceCode()));
+            if (!checkExist){
+                userRepository.addGemsToUser(userId, response.getProblem().getPoints());
+            }
+            response.setGems(response.getProblem().getPoints());
             response.setSourceCode(compileCodeDTO.getSourceCode());
         }
 

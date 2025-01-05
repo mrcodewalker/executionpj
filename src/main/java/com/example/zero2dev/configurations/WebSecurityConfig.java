@@ -43,6 +43,7 @@ public class WebSecurityConfig {
                                 .requestMatchers("/api/v1/frame/create").hasRole(Role.adminAccess())
                                 .requestMatchers("/api/v1/frame/**").hasRole(Role.adminAccess())
                                 .requestMatchers("/api/v1/frame/assign/**").hasRole(Role.adminAccess())
+                                .requestMatchers("/api/v1/frame/current").hasAnyRole(Role.fullRoleAccess())
                                 .requestMatchers("/api/v1/frame/toggle/**").hasRole(Role.adminAccess())
                                 .requestMatchers("/api/v1/frame/apply").hasAnyRole(Role.fullRoleAccess())
                                 .requestMatchers("/api/v1/frame/active").hasAnyRole(Role.fullRoleAccess())

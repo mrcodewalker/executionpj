@@ -106,6 +106,7 @@ public class UserService implements IUserService {
         exchangeUser.setPhoneNumber(phoneNumber);
         exchangeUser.setRole(this.roleService.getRoleNew(2L));
         exchangeUser.setAvatarUrl(avatarUrl);
+        exchangeUser.setGems(0L);
         exchangeUser.setIsActive(false);
         String token = UUID.randomUUID().toString();
         exchangeUser.setForgot(token);
@@ -259,6 +260,7 @@ public class UserService implements IUserService {
         response.setRole(user.getRole().getRoleName());
         loginDTO.setUsername(user.getUsername());
         response.setId(24112004+user.getId());
+        response.setGems(user.getGems());
         response.setSessionId(session.getSessionId());
         this.loginAttemptService.recordLoginAttempt(loginDTO, LoginStatus.SUCCESS, request);
         return response;
